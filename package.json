@@ -1,0 +1,45 @@
+{
+    "name": "web-debugger",
+    "version": "1.0.0",
+    "description": "A comprehensive development overlay tool for debugging and design assessment",
+    "main": "dist/dev-overlay.js",
+    "scripts": {
+        "start": "webpack serve --mode development",
+        "build": "webpack --mode production",
+        "dev": "webpack --mode development --watch",
+        "lint": "eslint src/**/*.js",
+        "lint:fix": "eslint src/**/*.js --fix",
+        "stylelint": "stylelint src/**/*.scss",
+        "stylelint:fix": "stylelint src/**/*.scss --fix",
+        "test": "jest"
+    },
+    "keywords": [
+        "debugging",
+        "overlay",
+        "developer-tools",
+        "wordpress",
+        "catpuccin"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "@babel/core": "^7.22.5",
+        "@babel/preset-env": "^7.22.5",
+        "babel-loader": "^9.1.2",
+        "css-loader": "^6.8.1",
+        "eslint": "^8.43.0",
+        "file-loader": "^6.2.0",
+        "html-webpack-plugin": "^5.5.3",
+        "jest": "^29.5.0",
+        "mini-css-extract-plugin": "^2.7.6",
+        "sass": "^1.63.6",
+        "sass-loader": "^13.3.2",
+        "style-loader": "^3.3.3",
+        "stylelint": "^15.9.0",
+        "stylelint-config-standard-scss": "^10.0.0",
+        "webpack": "^5.88.0",
+        "webpack-cli": "^5.1.4",
+        "webpack-dev-server": "^4.15.1"
+    },
+    "dependencies": {}
+}

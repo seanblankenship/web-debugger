@@ -1,0 +1,160 @@
+// Mixins for Web Debugger Overlay
+
+// Flexbox mixins
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// Typography mixins
+@mixin font-sans {
+  font-family: $font-family-sans;
+}
+
+@mixin font-mono {
+  font-family: $font-family-mono;
+}
+
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Animation mixins
+@mixin transition($properties: all, $duration: $animation-duration-md, $easing: $easing-standard) {
+  transition-property: $properties;
+  transition-duration: $duration;
+  transition-timing-function: $easing;
+}
+
+@mixin fade-in($duration: $animation-duration-md, $easing: $easing-standard) {
+  animation: fade-in $duration $easing;
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+@mixin scale-in($duration: $animation-duration-md, $easing: $easing-standard) {
+  animation: scale-in $duration $easing;
+  @keyframes scale-in {
+    from { 
+      opacity: 0; 
+      transform: scale(0.95);
+    }
+    to { 
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+// Element styling mixins
+@mixin card {
+  background-color: var(--bg-surface);
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-md;
+  padding: $spacing-md;
+}
+
+@mixin button-reset {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  outline: none;
+}
+
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+// Scrollbar styling
+@mixin styled-scrollbar {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: var(--bg-highlight);
+    border-radius: $border-radius-full;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: var(--fg-muted);
+    border-radius: $border-radius-full;
+    
+    &:hover {
+      background: var(--fg-secondary);
+    }
+  }
+}
+
+// Responsive mixins
+@mixin mobile {
+  @media (max-width: 767px) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: 768px) and (max-width: 1023px) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: 1024px) {
+    @content;
+  }
+}
+
+// Utility mixins
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+@mixin center-absolute {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@mixin overlay-container {
+  position: fixed;
+  z-index: $z-index-overlay;
+  background-color: var(--bg-base);
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-lg;
+  overflow: hidden;
+  @include transition(transform, $animation-duration-md, $easing-standard);
+} 

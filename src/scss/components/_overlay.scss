@@ -1,0 +1,189 @@
+// Main overlay container styles
+
+.dev-overlay {
+  @include overlay-container;
+  top: 20px;
+  right: 20px;
+  width: $overlay-width;
+  min-width: $overlay-min-width;
+  max-width: $overlay-max-width;
+  height: $overlay-height;
+  min-height: $overlay-min-height;
+  max-height: $overlay-max-height;
+  display: flex;
+  flex-direction: column;
+  border: $border-width-thin solid var(--overlay-border);
+  opacity: 0.98;
+  
+  // Animation for initial appearance
+  @include scale-in($animation-duration-md, $easing-decelerate);
+  transform-origin: top right;
+  
+  &.minimized {
+    width: auto;
+    height: auto;
+    transform: scale(0.8);
+    transform-origin: top right;
+    opacity: 0.9;
+    
+    &:hover {
+      opacity: 1;
+    }
+    
+    .dev-overlay-body {
+      display: none;
+    }
+  }
+  
+  &.collapsed {
+    height: auto;
+    
+    .dev-overlay-body {
+      display: none;
+    }
+  }
+  
+  &.dragging {
+    opacity: 0.85;
+    transition: none;
+    cursor: grabbing;
+  }
+}
+
+// Header bar with controls
+.dev-overlay-header {
+  @include flex-between;
+  background-color: var(--overlay-header);
+  padding: $spacing-sm $spacing-md;
+  border-bottom: $border-width-thin solid var(--overlay-border);
+  cursor: grab;
+  user-select: none;
+  
+  &:active {
+    cursor: grabbing;
+  }
+  
+  .dev-overlay-title {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    margin: 0;
+    padding: 0;
+    color: var(--fg-primary);
+    @include truncate;
+    max-width: 200px;
+  }
+  
+  .dev-overlay-controls {
+    @include flex-center;
+    gap: $spacing-sm;
+  }
+}
+
+// Main content area
+.dev-overlay-body {
+  flex: 1;
+  overflow: auto;
+  @include styled-scrollbar;
+  padding: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+// Resize handle
+.dev-overlay-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--fg-muted);
+    border-bottom: 2px solid var(--fg-muted);
+    opacity: 0.7;
+  }
+  
+  &:hover::before {
+    opacity: 1;
+  }
+}
+
+// Control buttons
+.dev-overlay-control {
+  @include button-reset;
+  @include flex-center;
+  width: 24px;
+  height: 24px;
+  border-radius: $border-radius-full;
+  opacity: 0.7;
+  @include transition(all, $animation-duration-sm, $easing-standard);
+  @include focus-ring;
+  
+  &:hover {
+    opacity: 1;
+    background-color: var(--bg-highlight);
+  }
+  
+  svg {
+    width: 16px;
+    height: 16px;
+    fill: var(--fg-secondary);
+  }
+  
+  &.dev-overlay-close {
+    &:hover {
+      background-color: var(--error);
+      
+      svg {
+        fill: white;
+      }
+    }
+  }
+}
+
+// Floating action button
+.dev-overlay-fab {
+  position: fixed;
+  z-index: $z-index-overlay;
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: $border-radius-full;
+  background-color: var(--accent);
+  box-shadow: $shadow-md;
+  @include flex-center;
+  cursor: pointer;
+  @include transition(all, $animation-duration-md, $easing-standard);
+  @include focus-ring;
+  opacity: 0.9;
+  
+  &:hover {
+    opacity: 1;
+    transform: scale(1.05);
+    box-shadow: $shadow-lg;
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+  
+  svg {
+    width: 24px;
+    height: 24px;
+    fill: white;
+  }
+}
+
+// When overlay is hidden, but fab is visible
+.dev-overlay-hidden {
+  display: none;
+} 

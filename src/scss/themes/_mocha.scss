@@ -1,0 +1,40 @@
+// Catpuccin Mocha Theme (Darkest)
+// https://github.com/catppuccin/catppuccin
+
+.theme-mocha {
+  // Core background colors
+  --bg-base: #1e1e2e;
+  --bg-surface: #181825;
+  --bg-highlight: #313244;
+  
+  // Core text colors
+  --fg-primary: #cdd6f4;
+  --fg-secondary: #bac2de;
+  --fg-muted: #9399b2;
+  
+  // Semantic colors
+  --accent: #89b4fa;
+  --error: #f38ba8;
+  --success: #a6e3a1;
+  --warning: #f9e2af;
+  --info: #74c7ec;
+  
+  // Accent palette
+  --rosewater: #f5e0dc;
+  --flamingo: #f2cdcd;
+  --pink: #f5c2e7;
+  --mauve: #cba6f7;
+  --red: #f38ba8;
+  --maroon: #eba0ac;
+  --peach: #fab387;
+  --yellow: #f9e2af;
+  --green: #a6e3a1;
+  --teal: #94e2d5;
+  --sky: #89dceb;
+  --sapphire: #74c7ec;
+  --blue: #89b4fa;
+  --lavender: #b4befe;
+  
+  // Overlay specifics
+  --overlay-shadow: rgba(11, 12, 16, 0.6);
+} 

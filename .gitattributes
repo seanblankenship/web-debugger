@@ -1,0 +1,56 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# JavaScript files
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+
+# CSS/SCSS files
+*.css text eol=lf
+*.scss text eol=lf
+
+# HTML files
+*.html text eol=lf
+*.htm text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# SVG treated as text
+*.svg text eol=lf
+
+# Graphics
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+
+# Fonts
+*.ttf binary
+*.eot binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+
+# Exclude files from exporting
+.gitattributes export-ignore
+.gitignore export-ignore
+.cursorignore export-ignore
+.github export-ignore
+.vscode export-ignore
+
+# Merge strategies
+package-lock.json merge=npm
+yarn.lock merge=yarn
+
+# Linguist overrides
+*.js linguist-language=JavaScript
+*.scss linguist-language=SCSS 

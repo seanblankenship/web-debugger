@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dev Overlay - Development</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: #f5f5f5;
+    }
+    .content {
+      max-width: 800px;
+      padding: 20px;
+      margin: 20px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #333;
+    }
+    p {
+      line-height: 1.6;
+    }
+    code {
+      background-color: #f1f1f1;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-family: 'Courier New', Courier, monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="content">
+    <h1>Web Debugger - Dev Overlay</h1>
+    <p>This is a test page for developing the Web Debugger overlay tool. The overlay should appear automatically on this page.</p>
+    <p>You can test various features of the overlay on this page.</p>
+    <div id="test-area">
+      <h2>Test Area</h2>
+      <p>This section contains various HTML elements for testing the overlay's inspection capabilities:</p>
+      <ul>
+        <li>List item 1</li>
+        <li>List item 2</li>
+        <li>List item 3</li>
+      </ul>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div style="background-color: #f0f0f0; padding: 10px;">Grid Cell 1</div>
+        <div style="background-color: #e0e0e0; padding: 10px;">Grid Cell 2</div>
+      </div>
+      <p>This paragraph contains <span style="color: blue;">styled text</span> for testing the style inspector.</p>
+      <img src="https://via.placeholder.com/150" alt="Placeholder image">
+    </div>
+  </div>
+</body>
+</html> 
