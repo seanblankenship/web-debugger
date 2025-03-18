@@ -73,4 +73,71 @@ $theme-accent: #0077ff;
 $theme-error: #ff3333;
 $theme-success: #00cc66;
 $theme-warning: #ffcc00;
-$theme-info: #33aaff; 
+$theme-info: #33aaff;
+
+// Colors for overlay component
+:root {
+  // Base colors
+  --dev-panel-bg: #{$color-background-light};
+  --dev-panel-bg-rgb: #{$color-background-light-rgb};
+  --dev-panel-header-bg: #{$color-background-secondary-light};
+  --dev-panel-header-hover-bg: #{rgba($color-background-secondary-light-rgb, 0.8)};
+  --dev-border-color: #{$color-border-light};
+  --dev-text-color: #{$color-text-primary-light};
+  --dev-text-secondary: #{$color-text-secondary-light};
+  
+  // Control buttons
+  --dev-control-hover-bg: #{rgba($color-background-highlight-light-rgb, 0.15)};
+  --dev-control-active-bg: #{rgba($color-background-highlight-light-rgb, 0.25)};
+  --dev-close-hover-bg: #{$color-error-light};
+  --dev-close-hover-text: #{$color-white};
+  --dev-close-active-bg: #{darken($color-error-light, 5%)};
+  
+  // Accent colors
+  --dev-accent-color: #{$color-primary-light};
+  --dev-accent-hover: #{lighten($color-primary-light, 5%)};
+  --dev-accent-active: #{darken($color-primary-light, 5%)};
+  --dev-accent-text: #{$color-white};
+  
+  // Resize handle
+  --dev-resize-handle-color: #{$color-text-secondary-light};
+}
+
+// Dark theme colors
+@mixin dark-theme-variables {
+  --dev-panel-bg: #{$color-background-dark};
+  --dev-panel-bg-rgb: #{$color-background-dark-rgb};
+  --dev-panel-header-bg: #{$color-background-secondary-dark};
+  --dev-panel-header-hover-bg: #{rgba($color-background-secondary-dark-rgb, 0.8)};
+  --dev-border-color: #{$color-border-dark};
+  --dev-text-color: #{$color-text-primary-dark};
+  --dev-text-secondary: #{$color-text-secondary-dark};
+  
+  // Control buttons
+  --dev-control-hover-bg: #{rgba($color-background-highlight-dark-rgb, 0.2)};
+  --dev-control-active-bg: #{rgba($color-background-highlight-dark-rgb, 0.3)};
+  --dev-close-hover-bg: #{$color-error-dark};
+  --dev-close-hover-text: #{$color-white};
+  --dev-close-active-bg: #{lighten($color-error-dark, 5%)};
+  
+  // Accent colors
+  --dev-accent-color: #{$color-primary-dark};
+  --dev-accent-hover: #{lighten($color-primary-dark, 5%)};
+  --dev-accent-active: #{darken($color-primary-dark, 5%)};
+  --dev-accent-text: #{$color-white};
+  
+  // Resize handle
+  --dev-resize-handle-color: #{$color-text-secondary-dark};
+}
+
+// Apply dark theme variables when dark mode is enabled
+@media (prefers-color-scheme: dark) {
+  :root {
+    @include dark-theme-variables;
+  }
+}
+
+// Apply dark theme variables explicitly for dark theme class
+.dark-theme {
+  @include dark-theme-variables;
+} 

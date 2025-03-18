@@ -1,81 +1,95 @@
 // Main overlay container styles
 
 .dev-overlay {
-  @include overlay-container;
+  position: fixed;
   top: 20px;
-  right: 20px;
-  width: $overlay-width;
-  min-width: $overlay-min-width;
-  max-width: $overlay-max-width;
-  height: $overlay-height;
-  min-height: $overlay-min-height;
-  max-height: $overlay-max-height;
+  left: 20px;
+  width: 480px;
+  height: 320px;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 40px);
+  z-index: 99999;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
-  border: $border-width-thin solid var(--overlay-border);
-  opacity: 0.98;
+  overflow: hidden;
+  background-color: var(--dev-panel-bg);
+  color: var(--dev-text-color);
+  border: 1px solid var(--dev-border-color);
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0.13, 1), opacity 0.2s cubic-bezier(0.2, 0, 0.13, 1), width 0.15s, height 0.15s;
+  transform: translateZ(0); // Hardware acceleration
+  will-change: transform, opacity; // Hint for browser optimization
   
-  // Animation for initial appearance
-  @include scale-in($animation-duration-md, $easing-decelerate);
-  transform-origin: top right;
-  
+  // Minimize state
   &.minimized {
-    width: auto;
-    height: auto;
-    transform: scale(0.8);
+    transform: scale(0.3) translateZ(0);
     transform-origin: top right;
-    opacity: 0.9;
+    opacity: 0.85;
+    cursor: pointer;
+    pointer-events: all;
+    z-index: 99998;
     
     &:hover {
       opacity: 1;
+      transform: scale(0.32) translateZ(0);
     }
+  }
+  
+  // Collapsed state
+  &.collapsed {
+    height: 42px !important;
+    resize: none;
     
     .dev-overlay-body {
+      display: none;
+    }
+    
+    .dev-overlay-resize {
       display: none;
     }
   }
   
-  &.collapsed {
-    height: auto;
-    
-    .dev-overlay-body {
-      display: none;
-    }
+  &.resizing {
+    transition: none;
+    will-change: width, height;
   }
   
   &.dragging {
-    opacity: 0.85;
     transition: none;
     cursor: grabbing;
+    will-change: transform;
+    user-select: none;
   }
 }
 
 // Header bar with controls
 .dev-overlay-header {
-  @include flex-between;
-  background-color: var(--overlay-header);
-  padding: $spacing-sm $spacing-md;
-  border-bottom: $border-width-thin solid var(--overlay-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: var(--dev-panel-header-bg);
+  border-bottom: 1px solid var(--dev-border-color);
   cursor: grab;
   user-select: none;
   
-  &:active {
-    cursor: grabbing;
+  &:hover {
+    background-color: var(--dev-panel-header-hover-bg);
   }
   
   .dev-overlay-title {
-    font-size: $font-size-sm;
-    font-weight: $font-weight-bold;
-    margin: 0;
-    padding: 0;
-    color: var(--fg-primary);
-    @include truncate;
-    max-width: 200px;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 10px;
   }
   
   .dev-overlay-controls {
-    @include flex-center;
-    gap: $spacing-sm;
+    display: flex;
+    gap: 8px;
   }
 }
 
@@ -83,32 +97,36 @@
 .dev-overlay-body {
   flex: 1;
   overflow: auto;
-  @include styled-scrollbar;
-  padding: $spacing-md;
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-md;
+  padding: 10px;
+  position: relative;
+  
+  // Optimize scrolling performance
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+  overscroll-behavior: contain;
 }
 
 // Resize handle
 .dev-overlay-resize {
   position: absolute;
-  right: 0;
   bottom: 0;
+  right: 0;
   width: 16px;
   height: 16px;
   cursor: nwse-resize;
+  z-index: 10;
   
   &::before {
-    content: '';
+    content: "";
     position: absolute;
-    right: 3px;
-    bottom: 3px;
+    right: 4px;
+    bottom: 4px;
     width: 8px;
     height: 8px;
-    border-right: 2px solid var(--fg-muted);
-    border-bottom: 2px solid var(--fg-muted);
-    opacity: 0.7;
+    border-right: 2px solid var(--dev-resize-handle-color);
+    border-bottom: 2px solid var(--dev-resize-handle-color);
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
   }
   
   &:hover::before {
@@ -118,68 +136,82 @@
 
 // Control buttons
 .dev-overlay-control {
-  @include button-reset;
-  @include flex-center;
   width: 24px;
   height: 24px;
-  border-radius: $border-radius-full;
-  opacity: 0.7;
-  @include transition(all, $animation-duration-sm, $easing-standard);
-  @include focus-ring;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: var(--dev-text-secondary);
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  will-change: background-color, color;
   
   &:hover {
-    opacity: 1;
-    background-color: var(--bg-highlight);
+    background-color: var(--dev-control-hover-bg);
+    color: var(--dev-text-color);
+  }
+  
+  &:active {
+    background-color: var(--dev-control-active-bg);
+  }
+  
+  &.close-button {
+    &:hover {
+      background-color: var(--dev-close-hover-bg);
+      color: var(--dev-close-hover-text);
+    }
+    
+    &:active {
+      background-color: var(--dev-close-active-bg);
+    }
   }
   
   svg {
-    width: 16px;
-    height: 16px;
-    fill: var(--fg-secondary);
-  }
-  
-  &.dev-overlay-close {
-    &:hover {
-      background-color: var(--error);
-      
-      svg {
-        fill: white;
-      }
-    }
+    width: 14px;
+    height: 14px;
   }
 }
 
 // Floating action button
 .dev-overlay-fab {
   position: fixed;
-  z-index: $z-index-overlay;
   bottom: 20px;
   right: 20px;
-  width: 56px;
-  height: 56px;
-  border-radius: $border-radius-full;
-  background-color: var(--accent);
-  box-shadow: $shadow-md;
-  @include flex-center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--dev-accent-color);
+  color: var(--dev-accent-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  @include transition(all, $animation-duration-md, $easing-standard);
-  @include focus-ring;
-  opacity: 0.9;
+  z-index: 99999;
+  border: none;
+  transform: translateZ(0); // Hardware acceleration
+  will-change: transform, background-color;
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
   
   &:hover {
-    opacity: 1;
-    transform: scale(1.05);
-    box-shadow: $shadow-lg;
+    transform: translateZ(0) scale(1.05);
+    background-color: var(--dev-accent-hover);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
   }
   
   &:active {
-    transform: scale(0.95);
+    transform: translateZ(0) scale(0.98);
+    background-color: var(--dev-accent-active);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   }
   
   svg {
     width: 24px;
     height: 24px;
-    fill: white;
   }
 }
 

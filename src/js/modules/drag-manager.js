@@ -17,11 +17,18 @@ export class DragManager {
 
         this.isDragging = false;
         this.startPos = { x: 0, y: 0 };
-        this.startElemPos = { x: 0, y: 0 };
+        this.currentPos = { x: 0, y: 0 };
+        this.startTransform = { x: 0, y: 0 };
+
+        // Store element's computed position for restoration after drag
+        this.elementPos = { x: 0, y: 0 };
+
+        this.rafId = null;
 
         this.onMouseDown = this.onMouseDown.bind(this);
         this.onMouseMove = this.onMouseMove.bind(this);
         this.onMouseUp = this.onMouseUp.bind(this);
+        this.updateElementPosition = this.updateElementPosition.bind(this);
 
         // Initialize if element is provided
         if (this.element) {
@@ -69,17 +76,53 @@ export class DragManager {
             }
         }
 
+        // Ensure the element has hardware acceleration enabled
+        this.enableHardwareAcceleration();
+
         // Add event listeners
-        this.handle.addEventListener('mousedown', this.onMouseDown);
+        this.handle.addEventListener('mousedown', this.onMouseDown, {
+            passive: false,
+        });
         this.handle.addEventListener(
             'touchstart',
-            this.onTouchStart.bind(this)
+            this.onTouchStart.bind(this),
+            { passive: false }
         );
 
         // Set cursor style
         this.handle.style.cursor = 'move';
 
         console.log('DragManager: Initialized with handle', this.handle);
+    }
+
+    /**
+     * Enable hardware acceleration for the element
+     */
+    enableHardwareAcceleration() {
+        // Store original position if needed for later
+        const compStyle = window.getComputedStyle(this.element);
+        this.elementPos.x = parseInt(compStyle.left, 10) || 0;
+        this.elementPos.y = parseInt(compStyle.top, 10) || 0;
+
+        // Initialize transform property if not set
+        const transform = compStyle.transform;
+        if (transform === 'none' || !transform) {
+            this.element.style.transform = 'translate3d(0, 0, 0)';
+            this.startTransform = { x: 0, y: 0 };
+        } else {
+            // If there's an existing transform, parse it
+            const matrix = transform.match(/matrix.*\((.+)\)/);
+            if (matrix) {
+                const values = matrix[1].split(', ');
+                this.startTransform = {
+                    x: parseFloat(values[4]) || 0,
+                    y: parseFloat(values[5]) || 0,
+                };
+            }
+        }
+
+        // Add will-change property for better performance
+        this.element.style.willChange = 'transform';
     }
 
     /**
@@ -93,7 +136,9 @@ export class DragManager {
         e.preventDefault();
         this.startDrag(e.clientX, e.clientY);
 
-        document.addEventListener('mousemove', this.onMouseMove);
+        document.addEventListener('mousemove', this.onMouseMove, {
+            passive: false,
+        });
         document.addEventListener('mouseup', this.onMouseUp);
     }
 
@@ -108,7 +153,9 @@ export class DragManager {
         const touch = e.touches[0];
         this.startDrag(touch.clientX, touch.clientY);
 
-        document.addEventListener('touchmove', this.onTouchMove.bind(this));
+        document.addEventListener('touchmove', this.onTouchMove.bind(this), {
+            passive: false,
+        });
         document.addEventListener('touchend', this.onTouchEnd.bind(this));
     }
 
@@ -120,16 +167,58 @@ export class DragManager {
     startDrag(x, y) {
         this.isDragging = true;
         this.startPos = { x, y };
+        this.currentPos = { x, y };
 
-        // Get current element position
-        const rect = this.element.getBoundingClientRect();
-        this.startElemPos = {
-            x: rect.left,
-            y: rect.top,
-        };
+        // Get current transform values
+        const compStyle = window.getComputedStyle(this.element);
+        const transform = compStyle.transform;
 
-        // Add dragging class
+        if (transform !== 'none') {
+            const matrix = transform.match(/matrix.*\((.+)\)/);
+            if (matrix) {
+                const values = matrix[1].split(', ');
+                this.startTransform = {
+                    x: parseFloat(values[4]) || 0,
+                    y: parseFloat(values[5]) || 0,
+                };
+            }
+        }
+
+        // Add dragging class - but disable transitions
         this.element.classList.add('dragging');
+
+        // Start animation loop
+        this.startAnimationLoop();
+    }
+
+    /**
+     * Start requestAnimationFrame loop for smooth animation
+     */
+    startAnimationLoop() {
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId);
+        }
+        this.rafId = requestAnimationFrame(this.updateElementPosition);
+    }
+
+    /**
+     * Update element position in animation frame
+     */
+    updateElementPosition() {
+        if (!this.isDragging) return;
+
+        // Calculate new position
+        const deltaX = this.currentPos.x - this.startPos.x;
+        const deltaY = this.currentPos.y - this.startPos.y;
+
+        const newX = this.startTransform.x + deltaX;
+        const newY = this.startTransform.y + deltaY;
+
+        // Apply new position using transform for better performance
+        this.element.style.transform = `translate3d(${newX}px, ${newY}px, 0)`;
+
+        // Continue animation loop
+        this.rafId = requestAnimationFrame(this.updateElementPosition);
     }
 
     /**
@@ -140,7 +229,7 @@ export class DragManager {
         if (!this.isDragging) return;
 
         e.preventDefault();
-        this.doDrag(e.clientX, e.clientY);
+        this.currentPos = { x: e.clientX, y: e.clientY };
     }
 
     /**
@@ -152,29 +241,7 @@ export class DragManager {
 
         e.preventDefault();
         const touch = e.touches[0];
-        this.doDrag(touch.clientX, touch.clientY);
-    }
-
-    /**
-     * Perform drag operation
-     * @param {number} x - Client X position
-     * @param {number} y - Client Y position
-     */
-    doDrag(x, y) {
-        // Calculate new position
-        const deltaX = x - this.startPos.x;
-        const deltaY = y - this.startPos.y;
-
-        const newX = this.startElemPos.x + deltaX;
-        const newY = this.startElemPos.y + deltaY;
-
-        // Apply new position
-        this.element.style.left = `${newX}px`;
-        this.element.style.top = `${newY}px`;
-
-        // If element has right/bottom positioning, clear them
-        this.element.style.right = 'auto';
-        this.element.style.bottom = 'auto';
+        this.currentPos = { x: touch.clientX, y: touch.clientY };
     }
 
     /**
@@ -207,17 +274,25 @@ export class DragManager {
 
         this.isDragging = false;
 
+        // Stop animation loop
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+        }
+
         // Remove dragging class
         this.element.classList.remove('dragging');
 
         // Save position (dispatch event for storage)
-        const rect = this.element.getBoundingClientRect();
+        const transform = this.element.style.transform;
+        const match = transform.match(/translate3d\(([^,]+),\s*([^,]+),/);
+        const x = match ? parseFloat(match[1]) : 0;
+        const y = match ? parseFloat(match[2]) : 0;
+
         const dragEndEvent = new CustomEvent('drag:end', {
             detail: {
-                x: rect.left,
-                y: rect.top,
-                width: rect.width,
-                height: rect.height,
+                transform: { x, y },
+                elementPos: this.elementPos,
             },
         });
         this.element.dispatchEvent(dragEndEvent);
@@ -236,6 +311,10 @@ export class DragManager {
         document.removeEventListener('mouseup', this.onMouseUp);
         document.removeEventListener('touchmove', this.onTouchMove);
         document.removeEventListener('touchend', this.onTouchEnd);
+
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId);
+        }
 
         this.element = null;
         this.handle = null;

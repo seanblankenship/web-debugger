@@ -19,11 +19,16 @@ export class ResizeManager {
 
         this.isResizing = false;
         this.startPos = { x: 0, y: 0 };
+        this.currentPos = { x: 0, y: 0 };
         this.startSize = { width: 0, height: 0 };
+        this.currentSize = { width: 0, height: 0 };
+
+        this.rafId = null;
 
         this.onMouseDown = this.onMouseDown.bind(this);
         this.onMouseMove = this.onMouseMove.bind(this);
         this.onMouseUp = this.onMouseUp.bind(this);
+        this.updateElementSize = this.updateElementSize.bind(this);
 
         // Initialize if element is provided
         if (this.element) {
@@ -65,17 +70,40 @@ export class ResizeManager {
             }
         }
 
+        // Enable hardware acceleration
+        this.enableHardwareAcceleration();
+
         // Add event listeners
-        this.handle.addEventListener('mousedown', this.onMouseDown);
+        this.handle.addEventListener('mousedown', this.onMouseDown, {
+            passive: false,
+        });
         this.handle.addEventListener(
             'touchstart',
-            this.onTouchStart.bind(this)
+            this.onTouchStart.bind(this),
+            { passive: false }
         );
 
         console.log(
             'ResizeManager: Initialized with element',
             this.element.className
         );
+    }
+
+    /**
+     * Enable hardware acceleration for the element
+     */
+    enableHardwareAcceleration() {
+        // Use will-change for better performance during resize operations
+        this.element.style.willChange = 'width, height';
+
+        // Ensure the element has a transform for hardware acceleration
+        const compStyle = window.getComputedStyle(this.element);
+        const transform = compStyle.transform;
+
+        if (transform === 'none' || !transform) {
+            // Apply a minimal transform to trigger hardware acceleration
+            this.element.style.transform = 'translateZ(0)';
+        }
     }
 
     /**
@@ -102,6 +130,7 @@ export class ResizeManager {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: '10',
+            touchAction: 'none', // Disable browser handling of touch gestures
         });
 
         this.element.appendChild(handle);
@@ -120,7 +149,9 @@ export class ResizeManager {
         e.stopPropagation();
         this.startResize(e.clientX, e.clientY);
 
-        document.addEventListener('mousemove', this.onMouseMove);
+        document.addEventListener('mousemove', this.onMouseMove, {
+            passive: false,
+        });
         document.addEventListener('mouseup', this.onMouseUp);
     }
 
@@ -151,6 +182,7 @@ export class ResizeManager {
     startResize(x, y) {
         this.isResizing = true;
         this.startPos = { x, y };
+        this.currentPos = { x, y };
 
         // Get current element size
         const rect = this.element.getBoundingClientRect();
@@ -158,9 +190,37 @@ export class ResizeManager {
             width: rect.width,
             height: rect.height,
         };
+        this.currentSize = { ...this.startSize };
 
         // Add resizing class
         this.element.classList.add('resizing');
+
+        // Start animation loop for smooth updates
+        this.startAnimationLoop();
+    }
+
+    /**
+     * Start requestAnimationFrame loop for smooth animation
+     */
+    startAnimationLoop() {
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId);
+        }
+        this.rafId = requestAnimationFrame(this.updateElementSize);
+    }
+
+    /**
+     * Update element size in animation frame
+     */
+    updateElementSize() {
+        if (!this.isResizing) return;
+
+        // Apply new size
+        this.element.style.width = `${this.currentSize.width}px`;
+        this.element.style.height = `${this.currentSize.height}px`;
+
+        // Continue animation loop
+        this.rafId = requestAnimationFrame(this.updateElementSize);
     }
 
     /**
@@ -171,7 +231,12 @@ export class ResizeManager {
         if (!this.isResizing) return;
 
         e.preventDefault();
-        this.doResize(e.clientX, e.clientY);
+
+        // Just update current position - actual size update happens in rAF
+        this.currentPos = { x: e.clientX, y: e.clientY };
+
+        // Calculate new size
+        this.calculateNewSize();
     }
 
     /**
@@ -183,18 +248,21 @@ export class ResizeManager {
 
         e.preventDefault();
         const touch = e.touches[0];
-        this.doResize(touch.clientX, touch.clientY);
+
+        // Just update current position - actual size update happens in rAF
+        this.currentPos = { x: touch.clientX, y: touch.clientY };
+
+        // Calculate new size
+        this.calculateNewSize();
     }
 
     /**
-     * Perform resize operation
-     * @param {number} x - Client X position
-     * @param {number} y - Client Y position
+     * Calculate new size based on current mouse/touch position
      */
-    doResize(x, y) {
+    calculateNewSize() {
         // Calculate new size
-        const deltaX = x - this.startPos.x;
-        const deltaY = y - this.startPos.y;
+        const deltaX = this.currentPos.x - this.startPos.x;
+        const deltaY = this.currentPos.y - this.startPos.y;
 
         let newWidth = this.startSize.width + deltaX;
         let newHeight = this.startSize.height + deltaY;
@@ -210,9 +278,11 @@ export class ResizeManager {
         newWidth = Math.min(newWidth, maxWidth);
         newHeight = Math.min(newHeight, maxHeight);
 
-        // Apply new size
-        this.element.style.width = `${newWidth}px`;
-        this.element.style.height = `${newHeight}px`;
+        // Update current size
+        this.currentSize = {
+            width: newWidth,
+            height: newHeight,
+        };
     }
 
     /**
@@ -242,7 +312,17 @@ export class ResizeManager {
         if (!this.isResizing) return;
 
         this.isResizing = false;
+
+        // Stop animation loop
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+        }
+
         this.element.classList.remove('resizing');
+
+        // Reset will-change to avoid unnecessary GPU memory consumption
+        this.element.style.willChange = 'auto';
 
         // Save size (dispatch event for storage)
         const rect = this.element.getBoundingClientRect();
@@ -268,6 +348,11 @@ export class ResizeManager {
         document.removeEventListener('mouseup', this.onMouseUp);
         document.removeEventListener('touchmove', this.onTouchMove);
         document.removeEventListener('touchend', this.onTouchEnd);
+
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+        }
 
         this.element = null;
         this.handle = null;
