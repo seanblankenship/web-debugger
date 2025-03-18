@@ -99,3 +99,9 @@ tmp/
 temp/
 *.bak
 *.tmp
+
+# Cursor and agent files
+agent.md
+project-status.md
+.cursor/
+cursor.json
