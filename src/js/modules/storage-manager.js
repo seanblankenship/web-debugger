@@ -1,151 +1,113 @@
 /**
  * Storage Manager
- * Handles localStorage operations with proper namespacing.
+ * Manages localStorage for the overlay settings
  */
 export class StorageManager {
     /**
-     * Create a new StorageManager
-     * @param {string} namespace - The namespace to use for storage keys
+     * Create a new StorageManager instance
+     * @param {string} namespace - Storage namespace to prevent collisions
      */
-    constructor(namespace) {
+    constructor(namespace = 'web-debugger') {
         this.namespace = namespace;
     }
 
     /**
-     * Get the full storage key with namespace
-     * @param {string} key - The key to namespace
-     * @returns {string} The namespaced key
-     * @private
-     */
-    _getNamespacedKey(key) {
-        return `${this.namespace}.${key}`;
-    }
-
-    /**
-     * Set a value in localStorage
-     * @param {string} key - The key to store under
-     * @param {any} value - The value to store (will be JSON stringified)
-     * @returns {boolean} True if successful, false otherwise
-     */
-    set(key, value) {
-        try {
-            const namespacedKey = this._getNamespacedKey(key);
-            const stringValue = JSON.stringify(value);
-            localStorage.setItem(namespacedKey, stringValue);
-            return true;
-        } catch (error) {
-            console.error(`StorageManager: Error setting ${key}`, error);
-            return false;
-        }
-    }
-
-    /**
-     * Get a value from localStorage
-     * @param {string} key - The key to retrieve
-     * @param {any} defaultValue - The default value to return if key doesn't exist
-     * @returns {any} The retrieved value or defaultValue if not found
+     * Get a value from storage
+     * @param {string} key - Key to retrieve
+     * @param {*} defaultValue - Default value if key doesn't exist
+     * @returns {*} Stored value or default value
      */
     get(key, defaultValue = null) {
         try {
-            const namespacedKey = this._getNamespacedKey(key);
-            const value = localStorage.getItem(namespacedKey);
-
-            if (value === null) {
-                return defaultValue;
-            }
-
+            const value = localStorage.getItem(this.getNamespacedKey(key));
+            if (value === null) return defaultValue;
             return JSON.parse(value);
         } catch (error) {
-            console.error(`StorageManager: Error getting ${key}`, error);
+            console.error(`Error retrieving ${key} from storage`, error);
             return defaultValue;
         }
     }
 
     /**
-     * Remove a value from localStorage
-     * @param {string} key - The key to remove
-     * @returns {boolean} True if successful, false otherwise
+     * Set a value in storage
+     * @param {string} key - Key to store
+     * @param {*} value - Value to store
+     * @returns {boolean} Success status
+     */
+    set(key, value) {
+        try {
+            localStorage.setItem(
+                this.getNamespacedKey(key),
+                JSON.stringify(value)
+            );
+            return true;
+        } catch (error) {
+            console.error(`Error storing ${key} in storage`, error);
+            return false;
+        }
+    }
+
+    /**
+     * Remove a value from storage
+     * @param {string} key - Key to remove
+     * @returns {boolean} Success status
      */
     remove(key) {
         try {
-            const namespacedKey = this._getNamespacedKey(key);
-            localStorage.removeItem(namespacedKey);
+            localStorage.removeItem(this.getNamespacedKey(key));
             return true;
         } catch (error) {
-            console.error(`StorageManager: Error removing ${key}`, error);
+            console.error(`Error removing ${key} from storage`, error);
             return false;
         }
     }
 
     /**
-     * Clear all values for this namespace
-     * @returns {boolean} True if successful, false otherwise
+     * Clear all values in the namespace
+     * @returns {boolean} Success status
      */
     clear() {
         try {
-            // Find all items with this namespace
-            const keysToRemove = [];
-
-            for (let i = 0; i < localStorage.length; i++) {
+            for (let i = localStorage.length - 1; i >= 0; i--) {
                 const key = localStorage.key(i);
-                if (key.startsWith(`${this.namespace}.`)) {
-                    keysToRemove.push(key);
+                if (key.startsWith(this.namespace)) {
+                    localStorage.removeItem(key);
                 }
             }
-
-            // Remove all found keys
-            keysToRemove.forEach((key) => localStorage.removeItem(key));
-
             return true;
         } catch (error) {
-            console.error(
-                `StorageManager: Error clearing namespace ${this.namespace}`,
-                error
-            );
+            console.error('Error clearing storage', error);
             return false;
         }
     }
 
     /**
-     * Get all keys for this namespace
-     * @returns {string[]} Array of keys without the namespace prefix
+     * Get all values in the namespace
+     * @returns {Object} All stored values in this namespace
      */
-    getAllKeys() {
-        const keys = [];
-        const prefix = `${this.namespace}.`;
-
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.startsWith(prefix)) {
-                keys.push(key.substring(prefix.length));
+    getAll() {
+        const values = {};
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith(this.namespace)) {
+                    const shortKey = key.substring(this.namespace.length + 1);
+                    values[shortKey] = JSON.parse(localStorage.getItem(key));
+                }
             }
+        } catch (error) {
+            console.error('Error getting all values from storage', error);
         }
-
-        return keys;
+        return values;
     }
 
     /**
-     * Get all items for this namespace
-     * @returns {Object} An object with all key-value pairs
+     * Get namespaced key
+     * @param {string} key - Original key
+     * @returns {string} Namespaced key
+     * @private
      */
-    getAllItems() {
-        const items = {};
-        const keys = this.getAllKeys();
-
-        keys.forEach((key) => {
-            items[key] = this.get(key);
-        });
-
-        return items;
-    }
-
-    /**
-     * Check if a key exists
-     * @param {string} key - The key to check
-     * @returns {boolean} True if the key exists, false otherwise
-     */
-    has(key) {
-        const namespacedKey = this._getNamespacedKey(key);
-        return localStorage.getItem(namespacedKey) !== null;
+    getNamespacedKey(key) {
+        return `${this.namespace}.${key}`;
     }
 }

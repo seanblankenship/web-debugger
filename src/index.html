@@ -3,61 +3,528 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dev Overlay - Development</title>
+  <title>Web Debugger - Development Tools</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
+    :root {
+      --primary-color: #3498db;
+      --secondary-color: #2ecc71;
+      --accent-color: #e74c3c;
+      --dark-color: #2c3e50;
+      --light-color: #ecf0f1;
+      --border-color: #ddd;
+      --text-color: #333;
+      --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background-color: #f5f5f5;
     }
-    .content {
-      max-width: 800px;
-      padding: 20px;
-      margin: 20px;
+
+    body {
+      font-family: var(--font-main);
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--light-color);
+    }
+
+    header {
+      background-color: var(--dark-color);
+      color: white;
+      padding: 1rem 0;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .btn {
+      display: inline-block;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      text-decoration: none;
+      margin-right: 0.5rem;
+    }
+
+    .btn:hover {
+      background-color: #2980b9;
+    }
+
+    .btn.accent {
+      background-color: var(--accent-color);
+    }
+
+    .btn.accent:hover {
+      background-color: #c0392b;
+    }
+
+    .btn.secondary {
+      background-color: var(--secondary-color);
+    }
+
+    .btn.secondary:hover {
+      background-color: #27ae60;
+    }
+
+    section {
+      padding: 2rem 0;
+    }
+
+    .card {
       background-color: white;
       border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
     }
-    h1 {
-      color: #333;
+
+    h1, h2, h3 {
+      margin-bottom: 1rem;
+      color: var(--dark-color);
     }
-    p {
-      line-height: 1.6;
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin: 1.5rem 0;
     }
-    code {
-      background-color: #f1f1f1;
-      padding: 2px 4px;
+
+    .grid-item {
+      background-color: #f8f9fa;
+      border-radius: 6px;
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .color-box {
+      height: 80px;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+    }
+
+    .color-1 { background-color: #3498db; }
+    .color-2 { background-color: #2ecc71; }
+    .color-3 { background-color: #e74c3c; }
+    .color-4 { background-color: #f39c12; }
+    .color-5 { background-color: #9b59b6; }
+
+    .text-sample {
+      margin: 1rem 0;
+    }
+
+    .font-arial { font-family: Arial, sans-serif; }
+    .font-times { font-family: 'Times New Roman', Times, serif; }
+    .font-courier { font-family: 'Courier New', Courier, monospace; }
+    .font-verdana { font-family: Verdana, Geneva, sans-serif; }
+
+    pre {
+      background-color: #f5f5f5;
+      padding: 1rem;
       border-radius: 4px;
+      overflow: auto;
       font-family: 'Courier New', Courier, monospace;
+      font-size: 0.9rem;
+    }
+
+    .spacing-test {
+      margin: 20px;
+      padding: 15px;
+      border: 2px solid #3498db;
+      background-color: rgba(52, 152, 219, 0.1);
+    }
+
+    .spacing-test .inner {
+      margin: 10px;
+      padding: 10px;
+      border: 1px solid #e74c3c;
+      background-color: rgba(231, 76, 60, 0.1);
+    }
+
+    .storage-output, .console-output {
+      background-color: #f5f5f5;
+      padding: 1rem;
+      border-radius: 4px;
+      font-family: monospace;
+      min-height: 100px;
+      max-height: 200px;
+      overflow: auto;
+      margin-top: 1rem;
+    }
+
+    footer {
+      background-color: var(--dark-color);
+      color: white;
+      text-align: center;
+      padding: 1rem 0;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
+  <!-- Webpack will inject the script automatically -->
 </head>
 <body>
-  <div class="content">
-    <h1>Web Debugger - Dev Overlay</h1>
-    <p>This is a test page for developing the Web Debugger overlay tool. The overlay should appear automatically on this page.</p>
-    <p>You can test various features of the overlay on this page.</p>
-    <div id="test-area">
-      <h2>Test Area</h2>
-      <p>This section contains various HTML elements for testing the overlay's inspection capabilities:</p>
-      <ul>
-        <li>List item 1</li>
-        <li>List item 2</li>
-        <li>List item 3</li>
-      </ul>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <div style="background-color: #f0f0f0; padding: 10px;">Grid Cell 1</div>
-        <div style="background-color: #e0e0e0; padding: 10px;">Grid Cell 2</div>
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">Web Debugger</div>
+        <div>
+          <button id="load-debugger" class="btn">Initialize Debugger</button>
+          <button id="test-all-tools" class="btn secondary">Test All Tools</button>
+        </div>
       </div>
-      <p>This paragraph contains <span style="color: blue;">styled text</span> for testing the style inspector.</p>
-      <img src="https://via.placeholder.com/150" alt="Placeholder image">
     </div>
-  </div>
+  </header>
+
+  <main class="container">
+    <section>
+      <div class="card">
+        <h2>Web Debugger Controls</h2>
+        <p>Click "Initialize Debugger" to activate the Web Debugger. Once loaded, you can test individual tools or use "Test All Tools" to cycle through them.</p>
+        <div id="debugger-status"></div>
+      </div>
+
+      <div class="card">
+        <h2>DOM Explorer Testing</h2>
+        <div class="nested-elements">
+          <div class="level-1">
+            <h3>Level 1</h3>
+            <div class="level-2">
+              <h4>Level 2</h4>
+              <div class="level-3">
+                <h5>Level 3</h5>
+                <p>This is a deeply nested paragraph with <span class="highlight">highlighted text</span> for testing DOM exploration.</p>
+                <ul>
+                  <li>Item 1</li>
+                  <li>Item 2</li>
+                  <li>Item 3</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Color Picker Testing</h2>
+        <div class="grid">
+          <div class="grid-item">
+            <div class="color-box color-1"></div>
+            <p>Primary Blue<br>#3498db</p>
+          </div>
+          <div class="grid-item">
+            <div class="color-box color-2"></div>
+            <p>Secondary Green<br>#2ecc71</p>
+          </div>
+          <div class="grid-item">
+            <div class="color-box color-3"></div>
+            <p>Accent Red<br>#e74c3c</p>
+          </div>
+          <div class="grid-item">
+            <div class="color-box color-4"></div>
+            <p>Orange<br>#f39c12</p>
+          </div>
+          <div class="grid-item">
+            <div class="color-box color-5"></div>
+            <p>Purple<br>#9b59b6</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Font Inspector Testing</h2>
+        <div class="text-sample font-arial">
+          <h4>Arial</h4>
+          <p>The quick brown fox jumps over the lazy dog.</p>
+        </div>
+        <div class="text-sample font-times">
+          <h4>Times New Roman</h4>
+          <p>The quick brown fox jumps over the lazy dog.</p>
+        </div>
+        <div class="text-sample font-courier">
+          <h4>Courier New</h4>
+          <p>The quick brown fox jumps over the lazy dog.</p>
+        </div>
+        <div class="text-sample font-verdana">
+          <h4>Verdana</h4>
+          <p>The quick brown fox jumps over the lazy dog.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Storage Inspector Testing</h2>
+        <button id="set-localStorage" class="btn">Set localStorage</button>
+        <button id="set-sessionStorage" class="btn">Set sessionStorage</button>
+        <button id="set-cookies" class="btn">Set Cookies</button>
+        <button id="clear-storage" class="btn accent">Clear All</button>
+        <div class="storage-output" id="storage-output">No storage data set yet.</div>
+      </div>
+
+      <div class="card">
+        <h2>Spacing Visualizer Testing</h2>
+        <div class="spacing-test">
+          Outer element with margin: 20px, padding: 15px, border: 2px
+          <div class="inner">
+            Inner element with margin: 10px, padding: 10px, border: 1px
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>JavaScript Validation Testing</h2>
+        <button id="run-js" class="btn">Run Valid JS</button>
+        <button id="run-js-error" class="btn accent">Run JS with Error</button>
+        <div class="console-output" id="js-output">JavaScript output will appear here.</div>
+      </div>
+
+      <div class="card">
+        <h2>CSS Validation Testing</h2>
+        <div style="display: flex;">
+          <div style="flex: 1; background-color: #f5f5f5; padding: 10px;">Valid flex item</div>
+          <div style="flex: 1 1 invalid; background-color: #f5f5f5; padding: 10px;">Invalid flex item</div>
+        </div>
+        <div style="padding-top: 20px; padding: 10px; margin-top: 10px;">Element with conflicting padding declarations</div>
+      </div>
+
+      <div class="card">
+        <h2>Network Monitor Testing</h2>
+        <button id="fetch-data" class="btn">Fetch JSON Data</button>
+        <button id="load-image" class="btn">Load Image</button>
+        <button id="load-css" class="btn">Load External CSS</button>
+        <div class="console-output" id="network-output">Network requests will appear here.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>Web Debugger - A comprehensive development tool for web applications</p>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const statusEl = document.getElementById('debugger-status');
+      
+      // Load debugger button
+      document.getElementById('load-debugger').addEventListener('click', () => {
+        statusEl.innerHTML = '<p style="color: #e74c3c;">Initializing debugger...</p>';
+        
+        try {
+          // Initialize or reinitialize the debugger
+          window.initWebDebugger();
+          statusEl.innerHTML = '<p style="color: #2ecc71;">✅ Debugger initialized successfully!</p>';
+          console.log("Web Debugger initialized!");
+        } catch (error) {
+          statusEl.innerHTML = `<p style="color: #e74c3c;">❌ Error: ${error.message}</p>`;
+          console.error('Debugger initialization error:', error);
+        }
+      });
+      
+      // Test all tools
+      document.getElementById('test-all-tools').addEventListener('click', () => {
+        if (!window.devOverlay) {
+          statusEl.innerHTML = '<p style="color: #f39c12;">⚠️ Please load the debugger first</p>';
+          return;
+        }
+        
+        // The list of tools to test
+        const tools = [
+          'dom-explorer',
+          'color-picker',
+          'font-inspector',
+          'responsive-checker',
+          'storage-inspector',
+          'network-monitor',
+          'js-validator',
+          'css-validator',
+          'spacing-visualizer',
+          'performance-monitor',
+          'accessibility-checker',
+          'settings-panel'
+        ];
+        
+        let delay = 0;
+        const step = 500; // 500ms between each tool activation
+        
+        tools.forEach(tool => {
+          setTimeout(() => {
+            try {
+              window.devOverlay.activateTool(tool);
+              console.log(`Activated tool: ${tool}`);
+            } catch (error) {
+              console.error(`Error activating ${tool}:`, error);
+            }
+          }, delay);
+          
+          delay += step;
+          
+          // Deactivate after a short while
+          setTimeout(() => {
+            try {
+              window.devOverlay.deactivateTool(tool);
+            } catch (error) {
+              console.error(`Error deactivating ${tool}:`, error);
+            }
+          }, delay);
+          
+          delay += step;
+        });
+      });
+      
+      // Storage testing
+      const storageOutput = document.getElementById('storage-output');
+      
+      document.getElementById('set-localStorage').addEventListener('click', () => {
+        localStorage.setItem('test-item1', 'Local Storage Value 1');
+        localStorage.setItem('test-item2', JSON.stringify({ complex: 'object', number: 42 }));
+        updateStorageOutput();
+      });
+      
+      document.getElementById('set-sessionStorage').addEventListener('click', () => {
+        sessionStorage.setItem('session-item1', 'Session Storage Value 1');
+        sessionStorage.setItem('session-item2', new Date().toISOString());
+        updateStorageOutput();
+      });
+      
+      document.getElementById('set-cookies').addEventListener('click', () => {
+        document.cookie = "test-cookie1=Cookie Value 1; path=/";
+        document.cookie = "test-cookie2=Cookie Value 2; path=/; max-age=3600";
+        updateStorageOutput();
+      });
+      
+      document.getElementById('clear-storage').addEventListener('click', () => {
+        localStorage.clear();
+        sessionStorage.clear();
+        // Clear cookies
+        document.cookie.split(';').forEach(cookie => {
+          const name = cookie.trim().split('=')[0];
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        });
+        updateStorageOutput();
+      });
+      
+      function updateStorageOutput() {
+        let output = '--- localStorage ---\n';
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          output += `${key}: ${localStorage.getItem(key)}\n`;
+        }
+        
+        output += '\n--- sessionStorage ---\n';
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          output += `${key}: ${sessionStorage.getItem(key)}\n`;
+        }
+        
+        output += '\n--- cookies ---\n';
+        output += document.cookie || '(no cookies)';
+        
+        storageOutput.textContent = output;
+      }
+      
+      // JavaScript testing
+      const jsOutput = document.getElementById('js-output');
+      
+      document.getElementById('run-js').addEventListener('click', () => {
+        try {
+          const result = [1, 2, 3, 4, 5].map(x => x * 2).filter(x => x > 5);
+          jsOutput.innerHTML = `<pre>Result: ${JSON.stringify(result)}</pre>`;
+        } catch (error) {
+          jsOutput.innerHTML = `<pre style="color: red;">Error: ${error.message}</pre>`;
+        }
+      });
+      
+      document.getElementById('run-js-error').addEventListener('click', () => {
+        try {
+          const obj = null;
+          const result = obj.nonExistentMethod();
+          jsOutput.innerHTML = `<pre>Result: ${JSON.stringify(result)}</pre>`;
+        } catch (error) {
+          jsOutput.innerHTML = `<pre style="color: red;">Error: ${error.message}</pre>`;
+          console.error('JS Error Test:', error);
+        }
+      });
+      
+      // Network testing
+      const networkOutput = document.getElementById('network-output');
+      
+      document.getElementById('fetch-data').addEventListener('click', () => {
+        networkOutput.textContent = 'Fetching data...';
+        
+        fetch('https://jsonplaceholder.typicode.com/todos/1')
+          .then(response => response.json())
+          .then(data => {
+            networkOutput.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+          })
+          .catch(error => {
+            networkOutput.textContent = `Error: ${error.message}`;
+          });
+      });
+      
+      document.getElementById('load-image').addEventListener('click', () => {
+        networkOutput.textContent = 'Loading image...';
+        
+        const img = new Image();
+        img.onload = () => {
+          networkOutput.textContent = `Image loaded: ${img.width}x${img.height}`;
+        };
+        img.onerror = () => {
+          networkOutput.textContent = 'Failed to load image';
+        };
+        img.src = 'https://via.placeholder.com/300x200';
+      });
+      
+      document.getElementById('load-css').addEventListener('click', () => {
+        networkOutput.textContent = 'Loading CSS...';
+        
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css';
+        
+        link.onload = () => {
+          networkOutput.textContent = 'CSS loaded successfully';
+        };
+        link.onerror = () => {
+          networkOutput.textContent = 'Failed to load CSS';
+        };
+        
+        document.head.appendChild(link);
+      });
+      
+      // Initialize storage display
+      updateStorageOutput();
+    });
+  </script>
 </body>
 </html> 
