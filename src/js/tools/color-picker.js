@@ -38,48 +38,26 @@ export class ColorPicker extends BaseTool {
     }
 
     /**
-     * Initialize the tool
-     * @returns {ColorPicker} This tool instance
+     * Set up the panel content
+     * @returns {HTMLElement} The panel content element
      */
-    init() {
-        if (this.initialized) {
-            return;
-        }
-
-        // Create panel if not already created
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'color-picker-panel panel';
-        }
+    setupPanel() {
+        // Create panel content
+        const content = document.createElement('div');
+        content.className = 'color-picker-panel';
 
         // Check if native eye dropper is available
         this.hasNativeEyeDropper = window.EyeDropper !== undefined;
-
-        this.render();
-        this.initialized = true;
-    }
-
-    /**
-     * Render the tool UI
-     * @returns {ColorPicker} This tool instance
-     */
-    render() {
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'color-picker-panel panel';
-        }
-
-        this.panel.innerHTML = '';
 
         // Create header
         const header = document.createElement('div');
         header.className = 'panel-header';
         header.innerHTML = `<h3>${this.name}</h3>`;
-        this.panel.appendChild(header);
+        content.appendChild(header);
 
         // Create content
-        const content = document.createElement('div');
-        content.className = 'panel-content';
+        const panelContent = document.createElement('div');
+        panelContent.className = 'panel-content';
 
         // Color history section
         const historySection = document.createElement('div');
@@ -94,7 +72,7 @@ export class ColorPicker extends BaseTool {
         this.historyContainer = historyContainer;
         historySection.appendChild(historyContainer);
 
-        content.appendChild(historySection);
+        panelContent.appendChild(historySection);
 
         // Color palettes from CSS section
         const paletteSection = document.createElement('div');
@@ -114,15 +92,26 @@ export class ColorPicker extends BaseTool {
         this.cssColorsContainer = cssColorsContainer;
         paletteSection.appendChild(cssColorsContainer);
 
-        content.appendChild(paletteSection);
+        panelContent.appendChild(paletteSection);
 
         // Add content to panel
-        this.panel.appendChild(content);
+        content.appendChild(panelContent);
 
         // Update color history display
         this.updateColorHistory();
 
-        return this.panel;
+        this.initialized = true;
+        return content;
+    }
+
+    /**
+     * Activate the tool
+     */
+    activate() {
+        if (this.isActive) return;
+
+        super.activate();
+        this.updateColorHistory();
     }
 
     /**

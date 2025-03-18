@@ -68,42 +68,23 @@ export class PerformanceMonitor extends BaseTool {
     }
 
     /**
-     * Initialize the tool
+     * Set up the panel content
+     * @returns {HTMLElement} The panel content element
      */
-    init() {
-        if (this.initialized) {
-            return;
-        }
-
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'performance-monitor-panel panel';
-        }
-
-        this.render();
-        this.initialized = true;
-    }
-
-    /**
-     * Render the UI
-     */
-    render() {
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'performance-monitor-panel panel';
-        }
-
-        this.panel.innerHTML = '';
+    setupPanel() {
+        // Create the panel content
+        const content = document.createElement('div');
+        content.className = 'performance-monitor-panel';
 
         // Create header
         const header = document.createElement('div');
         header.className = 'panel-header';
         header.innerHTML = `<h3>${this.name}</h3>`;
-        this.panel.appendChild(header);
+        content.appendChild(header);
 
         // Create content
-        const content = document.createElement('div');
-        content.className = 'panel-content';
+        const panelContent = document.createElement('div');
+        panelContent.className = 'panel-content';
 
         // Controls
         const controls = document.createElement('div');
@@ -122,7 +103,7 @@ export class PerformanceMonitor extends BaseTool {
         clearButton.addEventListener('click', () => this.clearMetrics());
         controls.appendChild(clearButton);
 
-        content.appendChild(controls);
+        panelContent.appendChild(controls);
 
         // Metrics sections
         const metricsContainer = document.createElement('div');
@@ -190,8 +171,8 @@ export class PerformanceMonitor extends BaseTool {
         `;
         metricsContainer.appendChild(resourcesSection);
 
-        content.appendChild(metricsContainer);
-        this.panel.appendChild(content);
+        panelContent.appendChild(metricsContainer);
+        content.appendChild(panelContent);
 
         // Store references to elements we'll update
         this.gauges = {
@@ -215,7 +196,8 @@ export class PerformanceMonitor extends BaseTool {
         this.resourcesMetricsContainer =
             resourcesSection.querySelector('#resources-metrics');
 
-        return this.panel;
+        this.initialized = true;
+        return content;
     }
 
     /**
@@ -225,10 +207,6 @@ export class PerformanceMonitor extends BaseTool {
         if (this.isActive) return;
 
         super.activate();
-
-        if (this.ui) {
-            this.ui.showToolPanel(this.panel);
-        }
 
         // Only start monitoring if it was previously monitoring
         if (this.getSetting('autoStart', false)) {

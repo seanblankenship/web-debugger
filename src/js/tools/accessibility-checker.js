@@ -32,42 +32,23 @@ export class AccessibilityChecker extends BaseTool {
     }
 
     /**
-     * Initialize the tool
+     * Set up the panel content
+     * @returns {HTMLElement} The panel content element
      */
-    init() {
-        if (this.initialized) {
-            return;
-        }
-
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'accessibility-checker-panel panel';
-        }
-
-        this.render();
-        this.initialized = true;
-    }
-
-    /**
-     * Render the UI
-     */
-    render() {
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'accessibility-checker-panel panel';
-        }
-
-        this.panel.innerHTML = '';
+    setupPanel() {
+        // Create panel content
+        const content = document.createElement('div');
+        content.className = 'accessibility-checker-panel';
 
         // Create header
         const header = document.createElement('div');
         header.className = 'panel-header';
         header.innerHTML = `<h3>${this.name}</h3>`;
-        this.panel.appendChild(header);
+        content.appendChild(header);
 
         // Create content
-        const content = document.createElement('div');
-        content.className = 'panel-content';
+        const panelContent = document.createElement('div');
+        panelContent.className = 'panel-content';
 
         // Controls section
         const controlsSection = document.createElement('div');
@@ -126,7 +107,7 @@ export class AccessibilityChecker extends BaseTool {
         );
 
         controlsSection.appendChild(filtersContainer);
-        content.appendChild(controlsSection);
+        panelContent.appendChild(controlsSection);
 
         // Results section
         const resultsSection = document.createElement('div');
@@ -139,10 +120,11 @@ export class AccessibilityChecker extends BaseTool {
         resultsSection.appendChild(issuesContainer);
         this.issuesContainer = issuesContainer;
 
-        content.appendChild(resultsSection);
-        this.panel.appendChild(content);
+        panelContent.appendChild(resultsSection);
+        content.appendChild(panelContent);
 
-        return this.panel;
+        this.initialized = true;
+        return content;
     }
 
     /**
@@ -152,10 +134,6 @@ export class AccessibilityChecker extends BaseTool {
         if (this.isActive) return;
 
         super.activate();
-
-        if (this.ui) {
-            this.ui.showToolPanel(this.panel);
-        }
 
         // Load saved filters
         this.loadFilters();
