@@ -18,6 +18,7 @@ export default class BaseTool {
         this.description = '';
         this.isActive = false;
         this.panel = null;
+        this.panelContent = null;
         this.events = {};
     }
 
@@ -25,14 +26,80 @@ export default class BaseTool {
      * Initialize the tool
      */
     init() {
-        // Override in subclass
+        // Create panel if it doesn't exist
+        if (!this.panel) {
+            this.createPanel();
+        }
+        return this;
+    }
+
+    /**
+     * Create the panel container for the tool
+     * This creates the outer panel structure
+     */
+    createPanel() {
+        if (this.panel) return this.panel;
+
+        // Create panel element with appropriate class names
+        this.panel = document.createElement('div');
+        this.panel.className = `${this.id}-panel panel`;
+
+        // Create the inner panel content if the specific tool hasn't done it yet
+        if (!this.panelContent) {
+            this.setupPanel();
+        }
+
+        // Add the content to the panel
+        if (this.panelContent && !this.panel.contains(this.panelContent)) {
+            // Clear any existing content first
+            this.panel.innerHTML = '';
+            this.panel.appendChild(this.panelContent);
+        }
+
+        return this.panel;
+    }
+
+    /**
+     * Set up the panel content
+     * Subclasses should override this to create their specific UI
+     */
+    setupPanel() {
+        if (this.panelContent) return this.panelContent;
+
+        // Create default panel content
+        this.panelContent = document.createElement('div');
+        this.panelContent.className = `${this.id}-content panel-content`;
+
+        // Add default content (tool name and description)
+        const heading = document.createElement('h3');
+        heading.textContent = this.name;
+
+        const description = document.createElement('p');
+        description.textContent =
+            this.description || 'No description available.';
+
+        this.panelContent.appendChild(heading);
+        this.panelContent.appendChild(description);
+
+        return this.panelContent;
     }
 
     /**
      * Activate the tool
      */
     activate() {
+        if (this.isActive) return;
+
         this.isActive = true;
+
+        // Make sure the panel is properly initialized
+        this.init();
+
+        // Show the panel if UI manager is available
+        if (this.ui && typeof this.ui.showToolPanel === 'function') {
+            this.ui.showToolPanel(this.id);
+        }
+
         this.emit('activate', this);
     }
 
@@ -40,6 +107,8 @@ export default class BaseTool {
      * Deactivate the tool
      */
     deactivate() {
+        if (!this.isActive) return;
+
         this.isActive = false;
         this.emit('deactivate', this);
     }
@@ -100,13 +169,7 @@ export default class BaseTool {
     off(event, callback) {
         if (!this.events[event]) return;
 
-        if (callback) {
-            this.events[event] = this.events[event].filter(
-                (cb) => cb !== callback
-            );
-        } else {
-            delete this.events[event];
-        }
+        this.events[event] = this.events[event].filter((cb) => cb !== callback);
     }
 
     /**
@@ -131,6 +194,10 @@ export default class BaseTool {
      * @returns {HTMLElement|null} The panel element or null
      */
     getPanel() {
+        // Create the panel if it doesn't exist yet
+        if (!this.panel) {
+            this.createPanel();
+        }
         return this.panel;
     }
 
@@ -138,6 +205,11 @@ export default class BaseTool {
      * Clean up the tool before destruction
      */
     destroy() {
+        // Deactivate if active
+        if (this.isActive) {
+            this.deactivate();
+        }
+
         // Clear all events
         this.events = {};
 
@@ -145,6 +217,10 @@ export default class BaseTool {
         if (this.panel && this.panel.parentNode) {
             this.panel.parentNode.removeChild(this.panel);
         }
+
+        // Clear references
+        this.panel = null;
+        this.panelContent = null;
 
         return true;
     }

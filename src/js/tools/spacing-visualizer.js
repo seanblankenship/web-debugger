@@ -65,7 +65,10 @@ export class SpacingVisualizer extends BaseTool {
      * Set up the tool UI
      */
     setup() {
-        // Panel already created in constructor
+        if (this.panel && this.panel.children.length > 0) {
+            return; // Already set up
+        }
+        this.createPanel();
     }
 
     /**
@@ -160,8 +163,14 @@ export class SpacingVisualizer extends BaseTool {
         this.dimensions = dimensions;
         this.spacing = spacing;
 
-        // Add content to panel
-        this.panel.appendChild(this.panelContent);
+        // Clear the panel first
+        if (this.panel) {
+            while (this.panel.firstChild) {
+                this.panel.removeChild(this.panel.firstChild);
+            }
+            // Add content to panel
+            this.panel.appendChild(this.panelContent);
+        }
     }
 
     /**
@@ -182,9 +191,8 @@ export class SpacingVisualizer extends BaseTool {
         this.injectStyles();
 
         // Ensure panel is in the UI
-        if (this.ui && typeof this.ui.setContent === 'function') {
-            // Use panelContent to avoid circular references since panel contains panelContent
-            this.ui.setContent(this.id, this.panelContent);
+        if (this.ui && typeof this.ui.showToolPanel === 'function') {
+            this.ui.showToolPanel(this.id);
         }
 
         // Log activation instead of notification

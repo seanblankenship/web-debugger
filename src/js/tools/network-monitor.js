@@ -50,17 +50,14 @@ export class NetworkMonitor extends BaseTool {
         // Initialize panel
         this.panel = document.createElement('div');
         this.panel.className = 'network-monitor-panel panel';
-        this.panelContent = null;
 
-        // Elements
+        // Elements - initialize these but don't create DOM elements yet
+        this.panelContent = null;
         this.requestList = null;
         this.requestDetails = null;
-        this.filterInputs = {};
-
-        // Bind methods
-        this.handleClearClick = this.handleClearClick.bind(this);
-        this.handleFilterChange = this.handleFilterChange.bind(this);
-        this.handleRequestSelect = this.handleRequestSelect.bind(this);
+        this.toolbar = null;
+        this.filtersSection = null;
+        this.statisticsSection = null;
 
         // Load saved filters from storage
         this.loadFilters();
@@ -70,6 +67,7 @@ export class NetworkMonitor extends BaseTool {
      * Set up the tool UI
      */
     setup() {
+        if (this.panelContent) return; // Already set up
         this.createPanel();
     }
 
@@ -77,13 +75,18 @@ export class NetworkMonitor extends BaseTool {
      * Create the tool panel
      */
     createPanel() {
-        // Create main container
-        this.panelContent = document.createElement('div');
-        this.panelContent.className = 'network-monitor-content';
+        // Create main container if it doesn't exist yet
+        if (!this.panelContent) {
+            this.panelContent = document.createElement('div');
+            this.panelContent.className = 'network-monitor-content';
+        } else {
+            // Clear existing content if recreating
+            this.panelContent.innerHTML = '';
+        }
 
         // Create toolbar
-        const toolbar = document.createElement('div');
-        toolbar.className = 'network-toolbar';
+        this.toolbar = document.createElement('div');
+        this.toolbar.className = 'network-toolbar';
 
         // Record button
         const recordToggle = document.createElement('div');
@@ -126,327 +129,26 @@ export class NetworkMonitor extends BaseTool {
             recordToggle.appendChild(input);
         }
 
-        toolbar.appendChild(recordToggle);
+        this.toolbar.appendChild(recordToggle);
 
         // Clear button
         const clearButton = document.createElement('button');
         clearButton.className = 'clear-button';
         clearButton.textContent = 'Clear';
         clearButton.addEventListener('click', () => this.handleClearClick());
-        toolbar.appendChild(clearButton);
+        this.toolbar.appendChild(clearButton);
 
-        this.panelContent.appendChild(toolbar);
+        this.panelContent.appendChild(this.toolbar);
 
-        // Create filters section
-        const filtersSection = document.createElement('div');
-        filtersSection.className = 'filters-section';
-
-        const urlFilter = document.createElement('input');
-        urlFilter.type = 'text';
-        urlFilter.placeholder = 'Filter by URL';
-        urlFilter.className = 'filter-input';
-        urlFilter.value = this.filters.url;
-        urlFilter.addEventListener('input', (e) => {
-            this.handleFilterChange('url', e.target.value);
-        });
-        filtersSection.appendChild(urlFilter);
-        this.filterInputs.url = urlFilter;
-
-        // Method filter (dropdown)
-        const methodFilter = document.createElement('select');
-        methodFilter.className = 'filter-select';
-        methodFilter.addEventListener('change', (e) => {
-            this.handleFilterChange('method', e.target.value);
-        });
-
-        const methodOptions = [
-            '',
-            'GET',
-            'POST',
-            'PUT',
-            'DELETE',
-            'PATCH',
-            'OPTIONS',
-            'HEAD',
-        ];
-        methodOptions.forEach((method) => {
-            const option = document.createElement('option');
-            option.value = method;
-            option.textContent = method || 'All Methods';
-            methodFilter.appendChild(option);
-        });
-        methodFilter.value = this.filters.method;
-        filtersSection.appendChild(methodFilter);
-        this.filterInputs.method = methodFilter;
-
-        // Status filter (dropdown)
-        const statusFilter = document.createElement('select');
-        statusFilter.className = 'filter-select';
-        statusFilter.addEventListener('change', (e) => {
-            this.handleFilterChange('status', e.target.value);
-        });
-
-        const statusOptions = ['', '2xx', '3xx', '4xx', '5xx'];
-        statusOptions.forEach((status) => {
-            const option = document.createElement('option');
-            option.value = status;
-            option.textContent = status || 'All Status';
-            statusFilter.appendChild(option);
-        });
-        statusFilter.value = this.filters.status;
-        filtersSection.appendChild(statusFilter);
-        this.filterInputs.status = statusFilter;
-
-        // Type filter (dropdown)
-        const typeFilter = document.createElement('select');
-        typeFilter.className = 'filter-select';
-        typeFilter.addEventListener('change', (e) => {
-            this.handleFilterChange('type', e.target.value);
-        });
-
-        const typeOptions = [
-            '',
-            'xhr',
-            'fetch',
-            'document',
-            'script',
-            'stylesheet',
-            'image',
-            'media',
-            'font',
-            'json',
-            'other',
-        ];
-        typeOptions.forEach((type) => {
-            const option = document.createElement('option');
-            option.value = type;
-            option.textContent = type
-                ? type.charAt(0).toUpperCase() + type.slice(1)
-                : 'All Types';
-            typeFilter.appendChild(option);
-        });
-        typeFilter.value = this.filters.type;
-        filtersSection.appendChild(typeFilter);
-        this.filterInputs.type = typeFilter;
-
-        this.panelContent.appendChild(filtersSection);
-
-        // Create main content area with two panes
-        const contentArea = document.createElement('div');
-        contentArea.className = 'network-content';
-
-        // Request list pane
-        this.requestList = document.createElement('div');
-        this.requestList.className = 'request-list';
-        contentArea.appendChild(this.requestList);
-
-        // Request details pane
-        this.requestDetails = document.createElement('div');
-        this.requestDetails.className = 'request-details';
-        this.requestDetails.innerHTML =
-            '<div class="empty-state">Select a request to view details</div>';
-        contentArea.appendChild(this.requestDetails);
-
-        this.panelContent.appendChild(contentArea);
-
-        // Add styles
-        const style = document.createElement('style');
-        style.textContent = `
-            .network-monitor-panel {
-                display: flex;
-                flex-direction: column;
-                height: 100%;
-                font-family: monospace;
+        // Now append the panelContent to the panel
+        if (this.panel) {
+            // Remove old content if it exists
+            while (this.panel.firstChild) {
+                this.panel.removeChild(this.panel.firstChild);
             }
-            
-            .network-toolbar {
-                display: flex;
-                align-items: center;
-                padding: 8px;
-                border-bottom: 1px solid var(--border-color, #ddd);
-            }
-            
-            .clear-button {
-                margin-left: 12px;
-                padding: 4px 8px;
-                background: none;
-                border: 1px solid var(--border-color, #ddd);
-                border-radius: 4px;
-                cursor: pointer;
-            }
-            
-            .filters-section {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-                padding: 8px;
-                border-bottom: 1px solid var(--border-color, #ddd);
-            }
-            
-            .filter-input {
-                flex: 1;
-                min-width: 100px;
-                padding: 4px 8px;
-                border: 1px solid var(--border-color, #ddd);
-                border-radius: 4px;
-                font-family: inherit;
-            }
-            
-            .filter-select {
-                padding: 4px 8px;
-                border: 1px solid var(--border-color, #ddd);
-                border-radius: 4px;
-                font-family: inherit;
-            }
-            
-            .network-content {
-                display: flex;
-                flex: 1;
-                overflow: hidden;
-            }
-            
-            .request-list {
-                flex: 1;
-                overflow-y: auto;
-                border-right: 1px solid var(--border-color, #ddd);
-            }
-            
-            .request-item {
-                padding: 8px;
-                cursor: pointer;
-                border-bottom: 1px solid var(--border-color, #ddd);
-                font-size: 12px;
-            }
-            
-            .request-item:hover {
-                background-color: rgba(0,0,0,0.05);
-            }
-            
-            .request-item.selected {
-                background-color: rgba(0,0,0,0.1);
-            }
-            
-            .request-url {
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                margin-bottom: 4px;
-            }
-            
-            .request-info {
-                display: flex;
-                justify-content: space-between;
-                font-size: 11px;
-                color: #666;
-            }
-            
-            .request-method {
-                font-weight: bold;
-            }
-            
-            .request-method.get {
-                color: #009688;
-            }
-            
-            .request-method.post {
-                color: #2196F3;
-            }
-            
-            .request-method.put {
-                color: #FF9800;
-            }
-            
-            .request-method.delete {
-                color: #F44336;
-            }
-            
-            .request-status {
-                margin-left: 8px;
-            }
-            
-            .request-status.success {
-                color: #4CAF50;
-            }
-            
-            .request-status.redirect {
-                color: #FF9800;
-            }
-            
-            .request-status.client-error {
-                color: #F44336;
-            }
-            
-            .request-status.server-error {
-                color: #9C27B0;
-            }
-            
-            .request-details {
-                flex: 1;
-                overflow-y: auto;
-                padding: 8px;
-            }
-            
-            .details-section {
-                margin-bottom: 16px;
-            }
-            
-            .details-heading {
-                font-weight: bold;
-                margin-bottom: 8px;
-                padding-bottom: 4px;
-                border-bottom: 1px solid var(--border-color, #ddd);
-            }
-            
-            .details-row {
-                display: flex;
-                margin-bottom: 4px;
-            }
-            
-            .details-key {
-                flex: 0 0 120px;
-                font-weight: bold;
-                color: #666;
-            }
-            
-            .details-value {
-                flex: 1;
-                word-break: break-all;
-            }
-            
-            .headers-table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 12px;
-            }
-            
-            .headers-table th,
-            .headers-table td {
-                text-align: left;
-                padding: 4px 8px;
-                border-bottom: 1px solid var(--border-color, #ddd);
-            }
-            
-            .response-body {
-                background-color: rgba(0,0,0,0.03);
-                padding: 8px;
-                border-radius: 4px;
-                overflow-x: auto;
-                max-height: 300px;
-            }
-            
-            .empty-state {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                height: 100%;
-                color: #999;
-                font-style: italic;
-            }
-        `;
-        this.panelContent.appendChild(style);
-
-        // Add the content to the panel
-        this.panel.appendChild(this.panelContent);
+            // Add the new content
+            this.panel.appendChild(this.panelContent);
+        }
     }
 
     /**
@@ -462,11 +164,9 @@ export class NetworkMonitor extends BaseTool {
             this.setup();
         }
 
-        // Show panel in UI - ensure it uses correct parameters
-        // and be careful not to create circular DOM references
-        if (this.ui && typeof this.ui.setContent === 'function') {
-            // Don't pass this.panel as it already contains this.panelContent
-            this.ui.setContent(this.id, this.panelContent);
+        // Show panel in UI - use the panel directly here
+        if (this.ui && typeof this.ui.showToolPanel === 'function') {
+            this.ui.showToolPanel(this.id);
         }
 
         // Start monitoring network

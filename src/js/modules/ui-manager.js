@@ -435,6 +435,12 @@ export class UIManager {
                     p.style.display = 'none';
                 });
 
+                // Make sure the panel is in the DOM
+                if (!this.elements.content.contains(toolId)) {
+                    console.log(`UIManager: Adding panel to content area`);
+                    this.elements.content.appendChild(toolId);
+                }
+
                 // Show the target panel
                 toolId.style.display = 'block';
                 return;
@@ -450,6 +456,11 @@ export class UIManager {
             if (!tool) {
                 console.warn(`Tool ${toolId} not found`);
                 return;
+            }
+
+            // Initialize the tool if needed
+            if (typeof tool.init === 'function') {
+                tool.init();
             }
 
             // Get the panel
@@ -470,6 +481,14 @@ export class UIManager {
             allPanels.forEach((p) => {
                 p.style.display = 'none';
             });
+
+            // Make sure the panel is in the DOM
+            if (!this.elements.content.contains(panel)) {
+                console.log(
+                    `UIManager: Adding ${toolId} panel to content area`
+                );
+                this.elements.content.appendChild(panel);
+            }
 
             // Show the target panel
             panel.style.display = 'block';
