@@ -35,43 +35,23 @@ export class ResponsiveChecker extends BaseTool {
     }
 
     /**
-     * Initialize the tool
+     * Set up the panel content
+     * @returns {HTMLElement} The panel content element
      */
-    init() {
-        if (this.initialized) {
-            return;
-        }
-
-        // Create panel if not already created
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'responsive-checker-panel panel';
-        }
-
-        this.render();
-        this.initialized = true;
-    }
-
-    /**
-     * Render the tool UI
-     */
-    render() {
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'responsive-checker-panel panel';
-        }
-
-        this.panel.innerHTML = '';
+    setupPanel() {
+        // Create panel content
+        const content = document.createElement('div');
+        content.className = 'responsive-checker-panel';
 
         // Create header
         const header = document.createElement('div');
         header.className = 'panel-header';
         header.innerHTML = `<h3>${this.name}</h3>`;
-        this.panel.appendChild(header);
+        content.appendChild(header);
 
         // Create content
-        const content = document.createElement('div');
-        content.className = 'panel-content';
+        const panelContent = document.createElement('div');
+        panelContent.className = 'panel-content';
 
         // Device selection section
         const deviceSection = document.createElement('div');
@@ -168,13 +148,14 @@ export class ResponsiveChecker extends BaseTool {
         previewSection.appendChild(previewButton);
 
         // Combine sections
-        content.appendChild(deviceSection);
-        content.appendChild(customSection);
-        content.appendChild(previewSection);
+        panelContent.appendChild(deviceSection);
+        panelContent.appendChild(customSection);
+        panelContent.appendChild(previewSection);
 
-        this.panel.appendChild(content);
+        content.appendChild(panelContent);
+        this.initialized = true;
 
-        return this.panel;
+        return content;
     }
 
     /**
@@ -184,11 +165,6 @@ export class ResponsiveChecker extends BaseTool {
         if (this.isActive) return;
 
         super.activate();
-
-        // Show the panel
-        if (this.ui) {
-            this.ui.showToolPanel(this.panel);
-        }
     }
 
     /**

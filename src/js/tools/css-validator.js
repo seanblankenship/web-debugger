@@ -25,43 +25,23 @@ export class CSSValidator extends BaseTool {
     }
 
     /**
-     * Initialize the tool
+     * Set up the panel content
+     * @returns {HTMLElement} The panel content element
      */
-    init() {
-        if (this.initialized) {
-            return;
-        }
-
-        // Create panel if not already created
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'css-validator-panel panel';
-        }
-
-        this.render();
-        this.initialized = true;
-    }
-
-    /**
-     * Render the tool UI
-     */
-    render() {
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'css-validator-panel panel';
-        }
-
-        this.panel.innerHTML = '';
+    setupPanel() {
+        // Create panel content
+        const content = document.createElement('div');
+        content.className = 'css-validator-panel';
 
         // Create header
         const header = document.createElement('div');
         header.className = 'panel-header';
         header.innerHTML = `<h3>${this.name}</h3>`;
-        this.panel.appendChild(header);
+        content.appendChild(header);
 
         // Create content
-        const content = document.createElement('div');
-        content.className = 'panel-content';
+        const panelContent = document.createElement('div');
+        panelContent.className = 'panel-content';
 
         // Controls section
         const controlsSection = document.createElement('div');
@@ -83,7 +63,7 @@ export class CSSValidator extends BaseTool {
         controlsSection.appendChild(statusContainer);
         this.statusContainer = statusContainer;
 
-        content.appendChild(controlsSection);
+        panelContent.appendChild(controlsSection);
 
         // Results section
         const resultsSection = document.createElement('div');
@@ -96,11 +76,12 @@ export class CSSValidator extends BaseTool {
         resultsSection.appendChild(resultsContainer);
         this.resultsContainer = resultsContainer;
 
-        content.appendChild(resultsSection);
+        panelContent.appendChild(resultsSection);
 
-        this.panel.appendChild(content);
+        content.appendChild(panelContent);
+        this.initialized = true;
 
-        return this.panel;
+        return content;
     }
 
     /**
@@ -110,11 +91,6 @@ export class CSSValidator extends BaseTool {
         if (this.isActive) return;
 
         super.activate();
-
-        // Show the panel
-        if (this.ui) {
-            this.ui.showToolPanel(this.panel);
-        }
     }
 
     /**

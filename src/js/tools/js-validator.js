@@ -40,9 +40,6 @@ export class JSValidator extends BaseTool {
         // Track if we've already loaded JSHint
         this.jsHintLoaded = false;
 
-        // Initialize the tool
-        this.initialized = false;
-
         // Initialize component references
         this.statusText = null;
         this.resultsContainer = null;
@@ -50,14 +47,19 @@ export class JSValidator extends BaseTool {
     }
 
     /**
-     * Initialize the tool
+     * Activate the tool
      */
-    init() {
-        if (this.initialized) return;
+    activate() {
+        if (this.isActive) return;
 
-        super.init();
+        super.activate();
+
+        // Load JSHint if not already loaded
         this.loadJSHint();
-        this.initialized = true;
+
+        // Find scripts on page
+        this.findScripts();
+
         return this;
     }
 
@@ -122,15 +124,6 @@ export class JSValidator extends BaseTool {
         content.appendChild(scriptsSection);
 
         return content;
-    }
-
-    /**
-     * Activate the tool
-     */
-    activate() {
-        super.activate();
-        this.findScripts();
-        return this;
     }
 
     /**
