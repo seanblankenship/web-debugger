@@ -26,43 +26,23 @@ export class StorageInspector extends BaseTool {
     }
 
     /**
-     * Initialize the tool
+     * Set up the panel content
+     * @returns {HTMLElement} The panel content element
      */
-    init() {
-        if (this.initialized) {
-            return;
-        }
-
-        // Create panel if not already created
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'storage-inspector-panel panel';
-        }
-
-        this.render();
-        this.initialized = true;
-    }
-
-    /**
-     * Render the tool UI
-     */
-    render() {
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'storage-inspector-panel panel';
-        }
-
-        this.panel.innerHTML = '';
+    setupPanel() {
+        // Create panel content
+        const content = document.createElement('div');
+        content.className = 'storage-inspector-panel';
 
         // Create header
         const header = document.createElement('div');
         header.className = 'panel-header';
         header.innerHTML = `<h3>${this.name}</h3>`;
-        this.panel.appendChild(header);
+        content.appendChild(header);
 
         // Create content
-        const content = document.createElement('div');
-        content.className = 'panel-content';
+        const panelContent = document.createElement('div');
+        panelContent.className = 'panel-content';
 
         // Storage type selector tabs
         const tabsContainer = document.createElement('div');
@@ -92,7 +72,7 @@ export class StorageInspector extends BaseTool {
             tabsContainer.appendChild(tab);
         });
 
-        content.appendChild(tabsContainer);
+        panelContent.appendChild(tabsContainer);
 
         // Storage data container
         const storageContainer = document.createElement('div');
@@ -186,15 +166,14 @@ export class StorageInspector extends BaseTool {
 
         storageContainer.appendChild(toolsContainer);
 
-        content.appendChild(storageContainer);
+        panelContent.appendChild(storageContainer);
+        content.appendChild(panelContent);
 
         // Store references
         this.tableBody = tableBody;
+        this.initialized = true;
 
-        // Initial data load
-        this.refreshStorage();
-
-        return this.panel;
+        return content;
     }
 
     /**
@@ -204,11 +183,6 @@ export class StorageInspector extends BaseTool {
         if (this.isActive) return;
 
         super.activate();
-
-        // Show the panel
-        if (this.ui) {
-            this.ui.showToolPanel(this.panel);
-        }
 
         // Refresh storage data
         this.refreshStorage();

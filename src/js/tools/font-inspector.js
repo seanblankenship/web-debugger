@@ -27,43 +27,23 @@ export class FontInspector extends BaseTool {
     }
 
     /**
-     * Initialize the tool
+     * Set up the panel content
+     * @returns {HTMLElement} The panel content element
      */
-    init() {
-        if (this.initialized) {
-            return;
-        }
-
-        // Create panel if not already created
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'font-inspector-panel panel';
-        }
-
-        this.render();
-        this.initialized = true;
-    }
-
-    /**
-     * Render the tool UI
-     */
-    render() {
-        if (!this.panel) {
-            this.panel = document.createElement('div');
-            this.panel.className = 'font-inspector-panel panel';
-        }
-
-        this.panel.innerHTML = '';
+    setupPanel() {
+        // Create panel content
+        const content = document.createElement('div');
+        content.className = 'font-inspector-panel';
 
         // Create header
         const header = document.createElement('div');
         header.className = 'panel-header';
         header.innerHTML = `<h3>${this.name}</h3>`;
-        this.panel.appendChild(header);
+        content.appendChild(header);
 
         // Create content
-        const content = document.createElement('div');
-        content.className = 'panel-content';
+        const panelContent = document.createElement('div');
+        panelContent.className = 'panel-content';
 
         // Font inspection options
         const optionsSection = document.createElement('div');
@@ -83,7 +63,7 @@ export class FontInspector extends BaseTool {
         optionsSection.appendChild(fontInfoContainer);
         this.fontInfoContainer = fontInfoContainer;
 
-        content.appendChild(optionsSection);
+        panelContent.appendChild(optionsSection);
 
         // Page fonts section
         const fontsSection = document.createElement('div');
@@ -103,15 +83,13 @@ export class FontInspector extends BaseTool {
         fontsSection.appendChild(fontsContainer);
         this.fontsContainer = fontsContainer;
 
-        content.appendChild(fontsSection);
+        panelContent.appendChild(fontsSection);
 
         // Add content to panel
-        this.panel.appendChild(content);
+        content.appendChild(panelContent);
 
-        // Analyze fonts on the page
-        this.analyzeFonts();
-
-        return this.panel;
+        this.initialized = true;
+        return content;
     }
 
     /**
@@ -122,10 +100,8 @@ export class FontInspector extends BaseTool {
 
         super.activate();
 
-        // Show the panel
-        if (this.ui) {
-            this.ui.showToolPanel(this.panel);
-        }
+        // Analyze fonts on the page
+        this.analyzeFonts();
     }
 
     /**
