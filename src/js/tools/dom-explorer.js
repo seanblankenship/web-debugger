@@ -46,10 +46,6 @@ export class DOMExplorer extends BaseTool {
 
         this.eventListeners = [];
 
-        // Create panel
-        this.panel = document.createElement('div');
-        this.panel.className = 'dom-explorer-panel';
-
         // Define handlers first before binding
         this.onMouseOver = (e) => {
             if (!this.isActive) return;
@@ -122,9 +118,6 @@ export class DOMExplorer extends BaseTool {
         // Call parent init
         super.init();
 
-        // Render the UI
-        this.render();
-
         // Populate the DOM tree
         this.refreshDOMTree();
 
@@ -132,41 +125,13 @@ export class DOMExplorer extends BaseTool {
     }
 
     /**
-     * Activate the tool
+     * Set up the panel content
+     * @returns {HTMLElement} The panel content element
      */
-    activate() {
-        super.activate();
-
-        // Add event listeners for element highlighting/selection
-        document.addEventListener('mouseover', this._handleMouseOver);
-        document.addEventListener('mouseout', this._handleMouseOut);
-        document.addEventListener('click', this._handleClick);
-
-        // Refresh the DOM tree
-        this.refreshDOMTree();
-    }
-
-    /**
-     * Deactivate the tool
-     */
-    deactivate() {
-        super.deactivate();
-
-        // Remove event listeners
-        document.removeEventListener('mouseover', this._handleMouseOver);
-        document.removeEventListener('mouseout', this._handleMouseOut);
-        document.removeEventListener('click', this._handleClick);
-
-        // Clear any highlights
-        this.clearHighlight();
-    }
-
-    /**
-     * Render the DOM Explorer UI
-     */
-    render() {
-        // Clear the panel
-        this.panel.innerHTML = '';
+    setupPanel() {
+        // Create panel content
+        const content = document.createElement('div');
+        content.className = 'dom-explorer-panel';
 
         // Create controls section
         const controls = document.createElement('div');
@@ -220,28 +185,60 @@ export class DOMExplorer extends BaseTool {
         options.appendChild(observeLabel);
 
         controls.appendChild(options);
-        this.panel.appendChild(controls);
+        content.appendChild(controls);
 
         // Create main content area with two panes
-        const content = document.createElement('div');
-        content.className = 'dom-explorer-content';
+        const mainContent = document.createElement('div');
+        mainContent.className = 'dom-explorer-content';
 
         // Tree view pane
         this.treeContainer = document.createElement('div');
         this.treeContainer.className = 'dom-tree-container';
-        content.appendChild(this.treeContainer);
+        mainContent.appendChild(this.treeContainer);
 
         // Details pane
         this.detailsContainer = document.createElement('div');
         this.detailsContainer.className = 'element-details-container';
         this.detailsContainer.innerHTML =
             '<div class="empty-state">Select an element to view details</div>';
-        content.appendChild(this.detailsContainer);
+        mainContent.appendChild(this.detailsContainer);
 
-        this.panel.appendChild(content);
+        content.appendChild(mainContent);
 
         // Add event listeners
-        this.addEventListeners(this.panel);
+        this.addEventListeners(content);
+
+        return content;
+    }
+
+    /**
+     * Activate the tool
+     */
+    activate() {
+        super.activate();
+
+        // Add event listeners for element highlighting/selection
+        document.addEventListener('mouseover', this._handleMouseOver);
+        document.addEventListener('mouseout', this._handleMouseOut);
+        document.addEventListener('click', this._handleClick);
+
+        // Refresh the DOM tree
+        this.refreshDOMTree();
+    }
+
+    /**
+     * Deactivate the tool
+     */
+    deactivate() {
+        super.deactivate();
+
+        // Remove event listeners
+        document.removeEventListener('mouseover', this._handleMouseOver);
+        document.removeEventListener('mouseout', this._handleMouseOut);
+        document.removeEventListener('click', this._handleClick);
+
+        // Clear any highlights
+        this.clearHighlight();
     }
 
     /**
@@ -323,7 +320,7 @@ export class DOMExplorer extends BaseTool {
                 // Add click handler to select this element
                 container.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.selectElement(node);
+                    this.selectNode(node);
                 });
 
                 // Create child nodes recursively if it has children and isn't collapsed

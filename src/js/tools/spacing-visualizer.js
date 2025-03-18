@@ -50,40 +50,24 @@ export class SpacingVisualizer extends BaseTool {
         this.handleMouseOut = this.handleMouseOut.bind(this);
         this.handleClick = this.handleClick.bind(this);
 
-        // Create panel
-        this.panel = document.createElement('div');
-        this.panel.className = 'spacing-visualizer-panel panel';
-
-        // Create the panel content immediately
-        this.createPanel();
-
         // Load saved options from storage
         this.loadOptions();
     }
 
     /**
-     * Set up the tool UI
+     * Set up the panel content
+     * @returns {HTMLElement} The panel content element
      */
-    setup() {
-        if (this.panel && this.panel.children.length > 0) {
-            return; // Already set up
-        }
-        this.createPanel();
-    }
-
-    /**
-     * Create the tool panel
-     */
-    createPanel() {
+    setupPanel() {
         // Create main container
-        this.panelContent = document.createElement('div');
-        this.panelContent.className = 'spacing-visualizer-panel';
+        const content = document.createElement('div');
+        content.className = 'spacing-visualizer-panel';
 
         // Tool description
         const description = document.createElement('p');
         description.textContent =
             'Visualize margins and padding on elements. Hover over elements to see their spacing.';
-        this.panelContent.appendChild(description);
+        content.appendChild(description);
 
         // Options panel
         const options = document.createElement('div');
@@ -134,7 +118,7 @@ export class SpacingVisualizer extends BaseTool {
         );
         options.appendChild(borderToggle);
 
-        this.panelContent.appendChild(options);
+        content.appendChild(options);
 
         // Element info panel
         const infoPanel = document.createElement('div');
@@ -156,21 +140,15 @@ export class SpacingVisualizer extends BaseTool {
         spacing.className = 'element-spacing';
         infoPanel.appendChild(spacing);
 
-        this.panelContent.appendChild(infoPanel);
+        content.appendChild(infoPanel);
 
         // Save references
         this.elementPath = elementPath;
         this.dimensions = dimensions;
         this.spacing = spacing;
+        this.panelContent = content;
 
-        // Clear the panel first
-        if (this.panel) {
-            while (this.panel.firstChild) {
-                this.panel.removeChild(this.panel.firstChild);
-            }
-            // Add content to panel
-            this.panel.appendChild(this.panelContent);
-        }
+        return content;
     }
 
     /**
@@ -179,6 +157,7 @@ export class SpacingVisualizer extends BaseTool {
     activate() {
         if (this.isActive) return;
 
+        super.activate();
         this.isActive = true;
 
         // Add event listeners
@@ -189,11 +168,6 @@ export class SpacingVisualizer extends BaseTool {
 
         // Add visualization styles
         this.injectStyles();
-
-        // Ensure panel is in the UI
-        if (this.ui && typeof this.ui.showToolPanel === 'function') {
-            this.ui.showToolPanel(this.id);
-        }
 
         // Log activation instead of notification
         console.log('Spacing Visualizer activated');

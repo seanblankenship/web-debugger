@@ -64,25 +64,14 @@ export class NetworkMonitor extends BaseTool {
     }
 
     /**
-     * Set up the tool UI
+     * Set up the panel content
+     * @returns {HTMLElement} The panel content element
      */
-    setup() {
-        if (this.panelContent) return; // Already set up
-        this.createPanel();
-    }
-
-    /**
-     * Create the tool panel
-     */
-    createPanel() {
-        // Create main container if it doesn't exist yet
-        if (!this.panelContent) {
-            this.panelContent = document.createElement('div');
-            this.panelContent.className = 'network-monitor-content';
-        } else {
-            // Clear existing content if recreating
-            this.panelContent.innerHTML = '';
-        }
+    setupPanel() {
+        // Create main container
+        const content = document.createElement('div');
+        content.className = 'network-monitor-content';
+        this.panelContent = content;
 
         // Create toolbar
         this.toolbar = document.createElement('div');
@@ -138,17 +127,9 @@ export class NetworkMonitor extends BaseTool {
         clearButton.addEventListener('click', () => this.handleClearClick());
         this.toolbar.appendChild(clearButton);
 
-        this.panelContent.appendChild(this.toolbar);
+        content.appendChild(this.toolbar);
 
-        // Now append the panelContent to the panel
-        if (this.panel) {
-            // Remove old content if it exists
-            while (this.panel.firstChild) {
-                this.panel.removeChild(this.panel.firstChild);
-            }
-            // Add the new content
-            this.panel.appendChild(this.panelContent);
-        }
+        return content;
     }
 
     /**
@@ -157,17 +138,8 @@ export class NetworkMonitor extends BaseTool {
     activate() {
         if (this.isActive) return;
 
+        super.activate();
         this.isActive = true;
-
-        // Create panel if it doesn't exist
-        if (!this.panelContent) {
-            this.setup();
-        }
-
-        // Show panel in UI - use the panel directly here
-        if (this.ui && typeof this.ui.showToolPanel === 'function') {
-            this.ui.showToolPanel(this.id);
-        }
 
         // Start monitoring network
         this.startMonitoring();

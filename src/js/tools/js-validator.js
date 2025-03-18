@@ -43,10 +43,6 @@ export class JSValidator extends BaseTool {
         // Initialize the tool
         this.initialized = false;
 
-        // Create panel
-        this.panel = document.createElement('div');
-        this.panel.className = 'js-validator-panel panel';
-
         // Initialize component references
         this.statusText = null;
         this.resultsContainer = null;
@@ -60,13 +56,16 @@ export class JSValidator extends BaseTool {
         if (this.initialized) return;
 
         super.init();
-        this.render();
         this.loadJSHint();
         this.initialized = true;
         return this;
     }
 
-    render() {
+    /**
+     * Set up the panel content
+     * @returns {HTMLElement} The panel content element
+     */
+    setupPanel() {
         const content = document.createElement('div');
         content.className = 'js-validator-content';
 
@@ -122,10 +121,15 @@ export class JSValidator extends BaseTool {
         content.appendChild(resultsSection);
         content.appendChild(scriptsSection);
 
-        // Clear the panel and add the content
-        this.panel.innerHTML = '';
-        this.panel.appendChild(content);
+        return content;
+    }
 
+    /**
+     * Activate the tool
+     */
+    activate() {
+        super.activate();
+        this.findScripts();
         return this;
     }
 
