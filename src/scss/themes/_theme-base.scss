@@ -19,6 +19,13 @@
   --warning: #{$theme-warning};
   --info: #{$theme-info};
   
+  // RGB versions for use in rgba()
+  --accent-rgb: #{red($theme-accent)}, #{green($theme-accent)}, #{blue($theme-accent)};
+  --error-rgb: #{red($theme-error)}, #{green($theme-error)}, #{blue($theme-error)};
+  --success-rgb: #{red($theme-success)}, #{green($theme-success)}, #{blue($theme-success)};
+  --warning-rgb: #{red($theme-warning)}, #{green($theme-warning)}, #{blue($theme-warning)};
+  --info-rgb: #{red($theme-info)}, #{green($theme-info)}, #{blue($theme-info)};
+  
   // Overlay UI specific
   --overlay-bg: var(--bg-base);
   --overlay-border: var(--bg-highlight);

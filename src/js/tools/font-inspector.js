@@ -266,7 +266,7 @@ export class FontInspector extends BaseTool {
         if (!this.fontInfoContainer) return;
 
         // Create font info html
-        let html = '<div class="font-info">';
+        let html = '<div class="section font-info">';
         html += `<div class="font-preview" style="font-family: ${fontInfo.fontFamily}; font-size: ${fontInfo.fontSize}; font-weight: ${fontInfo.fontWeight}; font-style: ${fontInfo.fontStyle}; color: ${fontInfo.color};">The quick brown fox jumps over the lazy dog</div>`;
         html += '<table class="font-properties">';
 

@@ -1,0 +1,225 @@
+// Panel Component Styles
+// This file defines consistent panel styling for all tools
+
+// Base panel container
+.panel {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--tool-bg);
+  border: $border-width-thin solid var(--tool-border);
+  border-radius: $border-radius-md;
+  overflow: hidden;
+  height: 100%;
+  font-family: $font-family-sans;
+  
+  // Panel header
+  .panel-header {
+    padding: $spacing-md;
+    background-color: var(--tool-header);
+    border-bottom: $border-width-thin solid var(--tool-border);
+    
+    h3 {
+      margin: 0;
+      font-size: $font-size-lg;
+      font-weight: $font-weight-medium;
+      color: var(--fg-primary);
+    }
+  }
+  
+  // Panel content
+  .panel-content {
+    flex: 1;
+    padding: $spacing-md;
+    overflow-y: auto;
+    @include styled-scrollbar;
+    
+    // Common section styles
+    .section {
+      margin-bottom: $spacing-lg;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+      
+      h4 {
+        margin: 0 0 $spacing-sm;
+        font-size: $font-size-md;
+        font-weight: $font-weight-medium;
+        color: var(--fg-primary);
+      }
+    }
+  }
+}
+
+// Apply these styles to all tool panels
+// This ensures consistent styling regardless of the tool's specific class
+[class*="-panel"] {
+  @extend .panel;
+}
+
+// Common tool component styles
+
+// Status indicators
+.status-text {
+  font-size: $font-size-sm;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $border-radius-sm;
+  
+  &.status-error {
+    background-color: rgba(var(--error-rgb), 0.1);
+    color: var(--error);
+  }
+  
+  &.status-success {
+    background-color: rgba(var(--success-rgb), 0.1);
+    color: var(--success);
+  }
+  
+  &.status-warning {
+    background-color: rgba(var(--warning-rgb), 0.1);
+    color: var(--warning);
+  }
+}
+
+// Results containers
+.results-container {
+  margin-top: $spacing-md;
+  border: $border-width-thin solid var(--tool-border);
+  border-radius: $border-radius-sm;
+  overflow: hidden;
+  
+  .empty-message {
+    padding: $spacing-md;
+    color: var(--fg-muted);
+    text-align: center;
+    font-style: italic;
+  }
+  
+  .loading-message {
+    padding: $spacing-md;
+    color: var(--fg-muted);
+    text-align: center;
+  }
+}
+
+// Controls sections
+.controls-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+  
+  button {
+    @include button-secondary;
+    
+    &.primary-button {
+      @include button-primary;
+    }
+    
+    &.danger-button {
+      background-color: var(--error);
+      color: white;
+      
+      &:hover {
+        background-color: darken(var(--error), 10%);
+      }
+    }
+  }
+}
+
+// Tool specific style adjustments
+
+// Storage Inspector
+.storage-inspector-panel {
+  .storage-tabs {
+    display: flex;
+    border-bottom: $border-width-thin solid var(--tool-border);
+    margin-bottom: $spacing-md;
+    
+    .storage-tab {
+      padding: $spacing-sm $spacing-md;
+      cursor: pointer;
+      
+      &.active {
+        color: var(--accent);
+        border-bottom: $border-width-medium solid var(--accent);
+      }
+    }
+  }
+}
+
+// Font Inspector
+.font-inspector-panel {
+  .font-preview {
+    border: $border-width-thin solid var(--tool-border);
+    padding: $spacing-md;
+    border-radius: $border-radius-sm;
+    margin-bottom: $spacing-md;
+    overflow-x: auto;
+  }
+}
+
+// Performance Monitor
+.performance-monitor-panel {
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-md;
+    
+    .metric-gauge {
+      background-color: var(--bg-highlight);
+      padding: $spacing-md;
+      border-radius: $border-radius-sm;
+      text-align: center;
+      
+      .gauge-value {
+        font-size: $font-size-lg;
+        font-weight: $font-weight-bold;
+        color: var(--accent);
+      }
+    }
+  }
+}
+
+// CSS Validator
+.css-validator-panel {
+  .issue-item {
+    border: $border-width-thin solid var(--tool-border);
+    border-radius: $border-radius-sm;
+    padding: $spacing-sm;
+    margin-bottom: $spacing-sm;
+    
+    .issue-rule {
+      font-family: $font-family-mono;
+      font-size: $font-size-xs;
+      background-color: var(--bg-highlight);
+      padding: $spacing-xs;
+      border-radius: $border-radius-sm;
+      display: block;
+      overflow-x: auto;
+      margin-top: $spacing-xs;
+    }
+  }
+}
+
+// Responsive Checker
+.responsive-checker-panel {
+  .device-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: $spacing-sm;
+    margin-bottom: $spacing-md;
+    
+    .device-item {
+      border: $border-width-thin solid var(--tool-border);
+      border-radius: $border-radius-sm;
+      padding: $spacing-sm;
+      cursor: pointer;
+      
+      &.selected {
+        border-color: var(--accent);
+        background-color: rgba(var(--accent-rgb), 0.1);
+      }
+    }
+  }
+} 

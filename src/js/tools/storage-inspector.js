@@ -141,7 +141,7 @@ export class StorageInspector extends BaseTool {
 
         // Add search and filter
         const toolsContainer = document.createElement('div');
-        toolsContainer.className = 'storage-tools';
+        toolsContainer.className = 'storage-tools controls-section';
 
         const searchInput = document.createElement('input');
         searchInput.type = 'text';

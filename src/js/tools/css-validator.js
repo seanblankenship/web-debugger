@@ -331,7 +331,17 @@ export class CSSValidator extends BaseTool {
     updateStatus(message, state) {
         if (!this.statusContainer) return;
 
-        this.statusContainer.innerHTML = `<span class="status-text status-${state}">${message}</span>`;
+        // Map the state to the appropriate CSS class
+        const stateClass =
+            state === 'error'
+                ? 'status-error'
+                : state === 'success'
+                ? 'status-success'
+                : state === 'warning'
+                ? 'status-warning'
+                : '';
+
+        this.statusContainer.innerHTML = `<span class="status-text ${stateClass}">${message}</span>`;
     }
 
     /**
