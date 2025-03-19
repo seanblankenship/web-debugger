@@ -69,11 +69,11 @@ export class JSValidator extends BaseTool {
      */
     setupPanel() {
         const content = document.createElement('div');
-        content.className = 'js-validator-content';
+        content.className = 'js-validator-content panel-content';
 
         // Status section
         const statusSection = document.createElement('div');
-        statusSection.className = 'status-section';
+        statusSection.className = 'status-section section';
 
         const statusText = document.createElement('div');
         statusText.className = 'status-text';
@@ -81,7 +81,7 @@ export class JSValidator extends BaseTool {
         this.statusText = statusText;
 
         const validateButton = document.createElement('button');
-        validateButton.className = 'validate-button';
+        validateButton.className = 'validate-button primary-button';
         validateButton.textContent = 'Validate All Scripts';
         validateButton.addEventListener('click', () => this.validateScripts());
 
@@ -90,7 +90,7 @@ export class JSValidator extends BaseTool {
 
         // Results section
         const resultsSection = document.createElement('div');
-        resultsSection.className = 'results-section';
+        resultsSection.className = 'results-section section';
 
         const resultsTitle = document.createElement('h3');
         resultsTitle.textContent = 'Validation Results';
@@ -104,16 +104,23 @@ export class JSValidator extends BaseTool {
 
         // Scripts section
         const scriptsSection = document.createElement('div');
-        scriptsSection.className = 'scripts-section';
+        scriptsSection.className = 'scripts-section section';
 
         const scriptsTitle = document.createElement('h3');
         scriptsTitle.textContent = 'Scripts on Page';
         scriptsTitle.addEventListener('click', () => {
             this.scriptsContent.classList.toggle('collapsed');
+            const isCollapsed =
+                this.scriptsContent.classList.contains('collapsed');
+            // Save the state to ensure consistency between sessions
+            this.saveSetting('scriptsCollapsed', isCollapsed);
         });
 
         const scriptsContent = document.createElement('div');
-        scriptsContent.className = 'scripts-content collapsed';
+        const isCollapsed = this.getSetting('scriptsCollapsed', true);
+        scriptsContent.className = `scripts-content ${
+            isCollapsed ? 'collapsed' : ''
+        }`;
         this.scriptsContent = scriptsContent;
 
         scriptsSection.appendChild(scriptsTitle);
@@ -163,13 +170,22 @@ export class JSValidator extends BaseTool {
     /**
      * Update status indicator
      * @param {string} message - Status message
-     * @param {string} type - Status type (default, error, success)
+     * @param {string} type - Status type (default, error, success, warning)
      */
     updateStatus(message, type = 'default') {
         if (!this.statusText) return;
 
         this.statusText.textContent = message;
-        this.statusText.className = `status-text status-${type}`;
+        this.statusText.className = 'status-text';
+
+        // Add appropriate status class
+        if (type === 'error') {
+            this.statusText.classList.add('status-error');
+        } else if (type === 'success') {
+            this.statusText.classList.add('status-success');
+        } else if (type === 'warning') {
+            this.statusText.classList.add('status-warning');
+        }
     }
 
     /**
@@ -237,96 +253,105 @@ export class JSValidator extends BaseTool {
     }
 
     /**
-     * Update the scripts list in the UI
+     * Update the scripts list UI
      */
     updateScriptsList() {
         if (!this.scriptsContent) return;
 
-        // Clear content
+        // Clear previous content
         this.scriptsContent.innerHTML = '';
 
-        // No scripts found
         if (
             this.scriptSources.length === 0 &&
             this.inlineScripts.length === 0
         ) {
-            this.scriptsContent.innerHTML =
-                '<p>No scripts found on this page.</p>';
+            const emptyMessage = document.createElement('div');
+            emptyMessage.className = 'empty-message';
+            emptyMessage.textContent = 'No JavaScript files found.';
+            this.scriptsContent.appendChild(emptyMessage);
             return;
         }
 
-        // Create external scripts list
-        if (this.scriptSources.length > 0) {
-            const externalTitle = document.createElement('h5');
-            externalTitle.textContent = `External Scripts (${this.scriptSources.length})`;
-            this.scriptsContent.appendChild(externalTitle);
+        // Create a document fragment to minimize DOM operations
+        const fragment = document.createDocumentFragment();
 
-            const externalList = document.createElement('ul');
-            externalList.className = 'scripts-list external-scripts';
+        // Add external scripts
+        this.scriptSources.forEach((script) => {
+            const scriptItem = document.createElement('div');
+            scriptItem.className = 'script-item';
+            scriptItem.dataset.id = script.id;
 
-            this.scriptSources.forEach((script) => {
-                const item = document.createElement('li');
-                item.dataset.scriptId = script.id;
+            const scriptInfo = document.createElement('div');
+            scriptInfo.className = 'script-info';
 
-                // Extract filename from URL
-                const url = new URL(script.url);
-                const filename = url.pathname.split('/').pop();
+            const scriptName = document.createElement('div');
+            scriptName.className = 'script-name';
+            scriptName.textContent = this.getScriptFilename(script.url);
 
-                item.innerHTML = `
-                    <span class="script-name">${filename}</span>
-                    <span class="script-url">${script.url}</span>
-                    <button class="validate-script-btn">Validate</button>
-                `;
+            const scriptPath = document.createElement('div');
+            scriptPath.className = 'script-path';
+            scriptPath.textContent = script.url;
 
-                // Add validate button click handler
-                const validateBtn = item.querySelector('.validate-script-btn');
-                validateBtn.addEventListener('click', () =>
-                    this.validateExternalScript(script)
-                );
+            scriptInfo.appendChild(scriptName);
+            scriptInfo.appendChild(scriptPath);
 
-                externalList.appendChild(item);
+            const validateBtn = document.createElement('button');
+            validateBtn.className = 'validate-script-btn';
+            validateBtn.textContent = 'Validate';
+            validateBtn.addEventListener('click', () => {
+                validateBtn.textContent = 'Validating...';
+                validateBtn.disabled = true;
+                this.validateExternalScript(script).finally(() => {
+                    validateBtn.textContent = 'Validate';
+                    validateBtn.disabled = false;
+                });
             });
 
-            this.scriptsContent.appendChild(externalList);
-        }
+            scriptItem.appendChild(scriptInfo);
+            scriptItem.appendChild(validateBtn);
+            fragment.appendChild(scriptItem);
+        });
 
-        // Create inline scripts list
-        if (this.inlineScripts.length > 0) {
-            const inlineTitle = document.createElement('h5');
-            inlineTitle.textContent = `Inline Scripts (${this.inlineScripts.length})`;
-            this.scriptsContent.appendChild(inlineTitle);
+        // Add inline scripts
+        this.inlineScripts.forEach((script) => {
+            const scriptItem = document.createElement('div');
+            scriptItem.className = 'script-item';
+            scriptItem.dataset.id = script.id;
 
-            const inlineList = document.createElement('ul');
-            inlineList.className = 'scripts-list inline-scripts';
+            const scriptInfo = document.createElement('div');
+            scriptInfo.className = 'script-info';
 
-            this.inlineScripts.forEach((script) => {
-                const item = document.createElement('li');
-                item.dataset.scriptId = script.id;
+            const scriptName = document.createElement('div');
+            scriptName.className = 'script-name';
+            scriptName.textContent = `Inline script ${script.id}`;
 
-                // Show a preview of the script content
-                const contentPreview = script.content
-                    .slice(0, 100)
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
+            const scriptPath = document.createElement('div');
+            scriptPath.className = 'script-path';
+            scriptPath.textContent = `${script.content.slice(0, 50)}${
+                script.content.length > 50 ? '...' : ''
+            }`;
 
-                item.innerHTML = `
-                    <span class="script-preview">${contentPreview}${
-                    script.content.length > 100 ? '...' : ''
-                }</span>
-                    <button class="validate-script-btn">Validate</button>
-                `;
+            scriptInfo.appendChild(scriptName);
+            scriptInfo.appendChild(scriptPath);
 
-                // Add validate button click handler
-                const validateBtn = item.querySelector('.validate-script-btn');
-                validateBtn.addEventListener('click', () =>
-                    this.validateInlineScript(script)
-                );
-
-                inlineList.appendChild(item);
+            const validateBtn = document.createElement('button');
+            validateBtn.className = 'validate-script-btn';
+            validateBtn.textContent = 'Validate';
+            validateBtn.addEventListener('click', () => {
+                validateBtn.textContent = 'Validating...';
+                validateBtn.disabled = true;
+                this.validateInlineScript(script).finally(() => {
+                    validateBtn.textContent = 'Validate';
+                    validateBtn.disabled = false;
+                });
             });
 
-            this.scriptsContent.appendChild(inlineList);
-        }
+            scriptItem.appendChild(scriptInfo);
+            scriptItem.appendChild(validateBtn);
+            fragment.appendChild(scriptItem);
+        });
+
+        this.scriptsContent.appendChild(fragment);
     }
 
     /**
@@ -634,156 +659,104 @@ export class JSValidator extends BaseTool {
     updateResultsUI() {
         if (!this.resultsContainer) return;
 
-        const { errors, warnings } = this.results;
-
-        // Update stats
-        this.resultsContainer.innerHTML = `
-            <div class="stats">
-                <span class="error-count">${errors.length} errors</span>
-                <span class="warning-count">${warnings.length} warnings</span>
-            </div>
-        `;
-
         // Clear previous results
         this.resultsContainer.innerHTML = '';
 
-        // No issues
-        if (errors.length === 0 && warnings.length === 0) {
-            this.resultsContainer.innerHTML =
-                '<p class="no-issues">No issues found! 🎉</p>';
+        const totalErrors = this.results.errors.length;
+        const totalWarnings = this.results.warnings.length;
+
+        if (totalErrors === 0 && totalWarnings === 0) {
+            const emptyMessage = document.createElement('div');
+            emptyMessage.className = 'empty-message';
+            emptyMessage.textContent = 'No JavaScript issues found.';
+            this.resultsContainer.appendChild(emptyMessage);
             return;
         }
 
-        // Create errors section if there are errors
-        if (errors.length > 0) {
-            const errorsSection = document.createElement('div');
-            errorsSection.className = 'errors-section';
+        // Update status
+        this.updateStatus(
+            `Found ${totalErrors} errors and ${totalWarnings} warnings`,
+            totalErrors > 0
+                ? 'error'
+                : totalWarnings > 0
+                ? 'warning'
+                : 'success'
+        );
 
-            const errorsTitle = document.createElement('h5');
-            errorsTitle.textContent = `Errors (${errors.length})`;
-            errorsSection.appendChild(errorsTitle);
+        // Create results
+        const fragment = document.createDocumentFragment();
 
-            const errorsList = document.createElement('ul');
-            errorsList.className = 'issues-list errors-list';
+        // Add errors first
+        this.results.errors.forEach((error) => {
+            const errorItem = document.createElement('div');
+            errorItem.className = 'error-item';
 
-            // Group errors by script
-            const errorsByScript = {};
-            errors.forEach((error) => {
-                if (!errorsByScript[error.scriptId]) {
-                    errorsByScript[error.scriptId] = [];
-                }
-                errorsByScript[error.scriptId].push(error);
-            });
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'error-message';
+            errorMessage.textContent = error.message;
 
-            // Create list items for each script's errors
-            Object.keys(errorsByScript).forEach((scriptId) => {
-                const scriptErrors = errorsByScript[scriptId];
-                const scriptName = scriptErrors[0].scriptName;
+            const errorSource = document.createElement('div');
+            errorSource.className = 'error-source';
+            errorSource.textContent = `${error.source} (line ${error.line}, col ${error.column})`;
 
-                const scriptItem = document.createElement('li');
-                scriptItem.className = 'script-issues';
+            errorItem.appendChild(errorMessage);
+            errorItem.appendChild(errorSource);
 
-                const scriptHeader = document.createElement('div');
-                scriptHeader.className = 'script-header';
-                scriptHeader.textContent = `${scriptName} (${scriptErrors.length} errors)`;
-                scriptItem.appendChild(scriptHeader);
+            // Add code snippet if available
+            if (error.evidence) {
+                const errorLine = document.createElement('code');
+                errorLine.className = 'error-line';
+                errorLine.textContent = error.evidence;
+                errorItem.appendChild(errorLine);
+            }
 
-                const issuesList = document.createElement('ul');
-                issuesList.className = 'script-issues-list';
+            fragment.appendChild(errorItem);
+        });
 
-                scriptErrors.forEach((error) => {
-                    const issueItem = document.createElement('li');
-                    issueItem.className = 'issue-item';
+        // Then add warnings
+        this.results.warnings.forEach((warning) => {
+            const warningItem = document.createElement('div');
+            warningItem.className = 'warning-item';
 
-                    issueItem.innerHTML = `
-                        <div class="issue-location">Line ${error.line}, Col ${
-                        error.character
-                    }</div>
-                        <div class="issue-reason">${error.reason}</div>
-                        ${
-                            error.evidence
-                                ? `<code class="issue-evidence">${error.evidence
-                                      .replace(/</g, '&lt;')
-                                      .replace(/>/g, '&gt;')}</code>`
-                                : ''
-                        }
-                    `;
+            const warningMessage = document.createElement('div');
+            warningMessage.className = 'warning-message';
+            warningMessage.textContent = warning.message;
 
-                    issuesList.appendChild(issueItem);
-                });
+            const warningSource = document.createElement('div');
+            warningSource.className = 'warning-source';
+            warningSource.textContent = `${warning.source} (line ${warning.line}, col ${warning.column})`;
 
-                scriptItem.appendChild(issuesList);
-                errorsList.appendChild(scriptItem);
-            });
+            warningItem.appendChild(warningMessage);
+            warningItem.appendChild(warningSource);
 
-            errorsSection.appendChild(errorsList);
-            this.resultsContainer.appendChild(errorsSection);
-        }
+            // Add code snippet if available
+            if (warning.evidence) {
+                const warningLine = document.createElement('code');
+                warningLine.className = 'warning-line';
+                warningLine.textContent = warning.evidence;
+                warningItem.appendChild(warningLine);
+            }
 
-        // Create warnings section if there are warnings
-        if (warnings.length > 0) {
-            const warningsSection = document.createElement('div');
-            warningsSection.className = 'warnings-section';
+            fragment.appendChild(warningItem);
+        });
 
-            const warningsTitle = document.createElement('h5');
-            warningsTitle.textContent = `Warnings (${warnings.length})`;
-            warningsSection.appendChild(warningsTitle);
+        this.resultsContainer.appendChild(fragment);
+    }
 
-            const warningsList = document.createElement('ul');
-            warningsList.className = 'issues-list warnings-list';
-
-            // Group warnings by script
-            const warningsByScript = {};
-            warnings.forEach((warning) => {
-                if (!warningsByScript[warning.scriptId]) {
-                    warningsByScript[warning.scriptId] = [];
-                }
-                warningsByScript[warning.scriptId].push(warning);
-            });
-
-            // Create list items for each script's warnings
-            Object.keys(warningsByScript).forEach((scriptId) => {
-                const scriptWarnings = warningsByScript[scriptId];
-                const scriptName = scriptWarnings[0].scriptName;
-
-                const scriptItem = document.createElement('li');
-                scriptItem.className = 'script-issues';
-
-                const scriptHeader = document.createElement('div');
-                scriptHeader.className = 'script-header';
-                scriptHeader.textContent = `${scriptName} (${scriptWarnings.length} warnings)`;
-                scriptItem.appendChild(scriptHeader);
-
-                const issuesList = document.createElement('ul');
-                issuesList.className = 'script-issues-list';
-
-                scriptWarnings.forEach((warning) => {
-                    const issueItem = document.createElement('li');
-                    issueItem.className = 'issue-item';
-
-                    issueItem.innerHTML = `
-                        <div class="issue-location">Line ${warning.line}, Col ${
-                        warning.character
-                    }</div>
-                        <div class="issue-reason">${warning.reason}</div>
-                        ${
-                            warning.evidence
-                                ? `<code class="issue-evidence">${warning.evidence
-                                      .replace(/</g, '&lt;')
-                                      .replace(/>/g, '&gt;')}</code>`
-                                : ''
-                        }
-                    `;
-
-                    issuesList.appendChild(issueItem);
-                });
-
-                scriptItem.appendChild(issuesList);
-                warningsList.appendChild(scriptItem);
-            });
-
-            warningsSection.appendChild(warningsList);
-            this.resultsContainer.appendChild(warningsSection);
+    /**
+     * Get the filename from a script URL
+     * @param {string} url - The script URL
+     * @returns {string} The filename
+     */
+    getScriptFilename(url) {
+        try {
+            const parsedUrl = new URL(url);
+            const pathSegments = parsedUrl.pathname.split('/');
+            return pathSegments[pathSegments.length - 1] || url;
+        } catch (e) {
+            // For relative URLs or other parsing issues
+            const pathSegments = url.split('/');
+            return pathSegments[pathSegments.length - 1] || url;
         }
     }
 }
