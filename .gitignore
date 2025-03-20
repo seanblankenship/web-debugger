@@ -101,8 +101,16 @@ temp/
 *.tmp
 
 # Cursor and agent files
-agent.md
-project-status.md
+/agent.md
+/project-status.md
 .cursor/
 cursor.json
 .cursorignore
+
+# Allow documentation files in docs directory
+!docs/DESIGN_SYSTEM.md
+!docs/agent.md
+!docs/project-status.md
+
+# v1 folder (previous version backup)
+/v1/
