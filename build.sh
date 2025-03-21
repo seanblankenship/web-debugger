@@ -1,28 +1,18 @@
 #!/bin/bash
 
-# Build script for web-debugger extension
+# Build script for Web Debugger extension
 
-# Step 1: Compile TypeScript
+# Run TypeScript compiler
 echo "Compiling TypeScript..."
 npx tsc
 
-# Step 2: Run Vite build (will empty dist directory)
-echo "Running Vite build..."
+# Build with Vite
+echo "Building with Vite..."
 npx vite build
 
-# Step 3: Create directories for extension files
-echo "Creating directories..."
-mkdir -p dist/css dist/icons
-
-# Step 4: Copy extension files
-echo "Copying extension files..."
-cp src/extension/popup.html dist/
-cp src/extension/popup.css dist/css/
-cp public/manifest.json dist/
-
-# Step 5: Copy or create icon files
-echo "Setting up icons..."
-cp public/icons/* dist/icons/ 2>/dev/null || touch dist/icons/icon16.png dist/icons/icon48.png dist/icons/icon128.png
+# Manually copy direct-core.ts to output
+echo "Manually copying direct-core.ts to output..."
+npx esbuild src/core/direct-core.ts --outfile=dist/js/core.js --platform=browser --format=esm
 
 echo "Build complete! Extension files are in the dist directory."
 echo "Load the extension in Chrome by going to chrome://extensions/, enabling Developer mode, and clicking 'Load unpacked'." 

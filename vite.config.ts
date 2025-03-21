@@ -16,7 +16,7 @@ export default defineConfig({
                 'content-script': resolve(__dirname, 'src/extension/content-script.ts'),
                 popup: resolve(__dirname, 'src/extension/popup.ts'),
                 // Core files
-                core: resolve(__dirname, 'src/core/index.ts'),
+                core: resolve(__dirname, 'src/core/direct-core.ts'),
                 'base-panel': resolve(__dirname, 'src/ui/components/base-panel.ts'),
                 'welcome-dashboard': resolve(__dirname, 'src/ui/components/welcome-dashboard.ts'),
                 'custom-element': resolve(__dirname, 'src/ui/custom-element.ts')
