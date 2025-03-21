@@ -49,10 +49,35 @@ async function handleToggleDebugger(sendResponse: (response: any) => void) {
 
         console.log(`🐛 Web Debugger Background: Using active tab ${tab.id}`);
 
+        // Check if on a supported page
+        if (!tab.url || !(tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
+            throw new Error('This extension only works on regular web pages (http/https)');
+        }
+
         // Check if content script is responding
         const contentScriptReady = await isContentScriptReady(tab.id);
         if (!contentScriptReady) {
-            throw new Error('Content script not available on this page');
+            // Try injecting the content script programmatically as a fallback
+            console.log(`🐛 Web Debugger Background: Content script not ready, trying to inject it programmatically`);
+
+            try {
+                await chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    files: ['js/content-script.js']
+                });
+
+                // Wait a moment for script to initialize
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Check again
+                const recheck = await isContentScriptReady(tab.id);
+                if (!recheck) {
+                    throw new Error('Content script could not be initialized. The site may have restrictions preventing content scripts.');
+                }
+            } catch (error) {
+                console.error('🐛 Web Debugger Background: Failed to inject content script:', error);
+                throw new Error('Content script could not be initialized. Try reloading the page.');
+            }
         }
 
         // Send toggle message to content script

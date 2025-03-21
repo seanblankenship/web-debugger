@@ -5,6 +5,9 @@
  * for the debugger to work without dynamic imports.
  */
 
+// Note: This script should log immediately to confirm it's running
+console.log('🐛 Web Debugger: Content script loaded and initialized at', new Date().toISOString());
+
 // Import all dependencies upfront
 import '../ui/custom-element';
 import '../ui/components/base-panel';
