@@ -1,0 +1,45 @@
+{
+    "manifest_version": 3,
+    "name": "Web Debugger",
+    "version": "0.1.0",
+    "description": "A browser extension that provides comprehensive debugging and design tools for web development.",
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        }
+    },
+    "background": {
+        "service_worker": "js/background.js",
+        "type": "module"
+    },
+    "content_scripts": [
+        {
+            "matches": ["http://*/*", "https://*/*"],
+            "js": ["js/content-loader.js"],
+            "run_at": "document_start",
+            "all_frames": false
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "js/content.js",
+                "js/index.js",
+                "js/base-panel.js",
+                "js/welcome-dashboard.js",
+                "js/custom-element.js"
+            ],
+            "matches": ["<all_urls>"]
+        }
+    ],
+    "icons": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    },
+    "permissions": ["storage", "activeTab", "tabs", "scripting", "windows"],
+    "host_permissions": ["<all_urls>"]
+}

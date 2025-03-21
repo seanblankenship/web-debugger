@@ -1,0 +1,41 @@
+{
+    "name": "web-debugger",
+    "version": "0.1.0",
+    "description": "A browser extension that provides comprehensive debugging and design tools for web development.",
+    "main": "dist/js/content.js",
+    "type": "module",
+    "directories": {
+        "doc": "docs"
+    },
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "check": "tsc --noEmit"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/seanblankenship/web-debugger.git"
+    },
+    "keywords": [
+        "web",
+        "debugger",
+        "extension",
+        "developer-tools"
+    ],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/seanblankenship/web-debugger/issues"
+    },
+    "homepage": "https://github.com/seanblankenship/web-debugger#readme",
+    "devDependencies": {
+        "@types/chrome": "^0.0.310",
+        "@types/node": "^20.12.11",
+        "typescript": "^5.4.2",
+        "vite": "^5.1.5"
+    },
+    "dependencies": {
+        "lit": "^3.1.2"
+    }
+}
