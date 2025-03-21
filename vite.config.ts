@@ -13,17 +13,11 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 background: resolve(__dirname, 'src/extension/background.ts'),
-                'content-script': resolve(__dirname, 'src/extension/content-script.ts'),
-                popup: resolve(__dirname, 'src/extension/popup.ts'),
-                // Core files
-                core: resolve(__dirname, 'src/core/direct-core.ts'),
-                'base-panel': resolve(__dirname, 'src/ui/components/base-panel.ts'),
-                'welcome-dashboard': resolve(__dirname, 'src/ui/components/welcome-dashboard.ts'),
-                'custom-element': resolve(__dirname, 'src/ui/custom-element.ts')
+                'content-script': resolve(__dirname, 'src/extension/content-bundle.ts'),
+                popup: resolve(__dirname, 'src/extension/popup.ts')
             },
             output: {
                 entryFileNames: 'js/[name].js',
-                chunkFileNames: 'js/[name]-[hash].js',
                 assetFileNames: (assetInfo) => {
                     const name = assetInfo.name || '';
                     const info = name.split('.');
@@ -36,10 +30,10 @@ export default defineConfig({
                         return 'icons/[name][extname]';
                     }
                     return 'assets/[name][extname]';
-                },
-                manualChunks: undefined
+                }
             }
         },
+        cssCodeSplit: false,
         target: 'esnext',
         minify: false
     },

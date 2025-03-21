@@ -23,17 +23,6 @@
             "all_frames": false
         }
     ],
-    "web_accessible_resources": [
-        {
-            "resources": [
-                "js/core.js",
-                "js/base-panel.js",
-                "js/welcome-dashboard.js",
-                "js/custom-element.js"
-            ],
-            "matches": ["<all_urls>"]
-        }
-    ],
     "icons": {
         "16": "icons/icon16.png",
         "48": "icons/icon48.png",
