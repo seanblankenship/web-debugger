@@ -2,30 +2,28 @@
 
 A comprehensive browser extension for web development debugging, featuring:
 
--   Modern UI with theme support
--   Shadow DOM isolation from host pages
+-   Modern UI with Catpuccin theme support
+-   Dedicated debugging interface that runs in its own window
 -   Modular architecture for extensibility
--   Comprehensive debugging tools
+-   Tab selection and management
+-   Dockable interface
 
-## Project Status: Work in Progress
+## Architecture
 
-This project is currently in early development. Working on core functionality and addressing content script initialization issues.
+Web Debugger uses an extension page approach with these main components:
 
-## Current Challenges
+1. **Background Script**: Manages communication and extension state
+2. **Popup UI**: Provides quick access to open the debugger and change settings
+3. **Debugger Page**: Full-featured interface for debugging web pages
 
-Currently facing issues with content script initialization and communication between background scripts and content scripts. The main error is:
+This architecture avoids content script injection issues by running the debugger interface in a separate extension window that communicates with the target page through Chrome APIs.
 
-```
-Content script loader did not initialize properly
-```
+## Features
 
-## Planned Solutions
-
-Exploring several approaches to resolve these issues:
-
-1. **Simplified Content Script Architecture**: Removing the multi-phase loading approach in favor of a more direct content script injection
-2. **iFrame-Based Isolation**: Potential alternative to Shadow DOM for better isolation
-3. **Build Configuration Improvements**: Revising Vite and TypeScript configuration for better extension support
+-   **Tab Selection**: Debug any open tab from a single interface
+-   **Theme Support**: Light and dark themes with consistent styling
+-   **Dockable Interface**: Position the debugger as a side panel or floating window
+-   **Tab-Based UI**: Organized debugging tools (Inspector, Console, Network, Settings)
 
 ## Development Setup
 
@@ -44,8 +42,19 @@ npm run build
 
 ## Project Structure
 
--   `src/extension/`: Extension-specific code (background, content scripts, popup)
+-   `src/extension/`: Extension-specific code (background, popup, debugger)
 -   `src/core/`: Core functionality and API
 -   `src/ui/`: UI components and theme system
 -   `src/modules/`: Feature modules and tools
 -   `src/utils/`: Utility functions
+
+## Current Status
+
+This project is currently in active development. The extension page architecture is working, with tab targeting and basic UI functionality implemented. Next steps include implementing the actual debugging tools like DOM inspection and console functionality.
+
+## Documentation
+
+For detailed development notes and architectural decisions, see:
+
+-   [Development Notes](docs/development-notes.md)
+-   [Changelog](CHANGELOG.md)
