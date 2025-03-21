@@ -63,7 +63,8 @@ async function handleToggleDebugger(sendResponse: (response: any) => void) {
             try {
                 await chrome.scripting.executeScript({
                     target: { tabId: tab.id },
-                    files: ['js/content-script.js']
+                    files: ['js/content-script.js'],
+                    world: 'ISOLATED'
                 });
 
                 // Wait a moment for script to initialize
@@ -138,24 +139,53 @@ async function handleThemeChange(theme: string, sendResponse: (response: any) =>
 
 /**
  * Get the active tab if it's eligible for the debugger
+ * If the active tab isn't eligible, try to find any eligible tab
  */
 async function getActiveTab(): Promise<chrome.tabs.Tab | null> {
-    // Get active tab in current window
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tabs || tabs.length === 0) {
-        console.log('🐛 Web Debugger Background: No active tab found');
+    try {
+        // Get active tab in current window
+        const activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        // Check if we have an active tab and it's eligible
+        if (activeTabs && activeTabs.length > 0) {
+            const activeTab = activeTabs[0];
+            if (activeTab.url && (activeTab.url.startsWith('http://') || activeTab.url.startsWith('https://'))) {
+                console.log(`🐛 Web Debugger Background: Found eligible active tab: ${activeTab.id}`);
+                return activeTab;
+            } else {
+                console.log(`🐛 Web Debugger Background: Active tab not eligible: ${activeTab.url}`);
+            }
+        } else {
+            console.log('🐛 Web Debugger Background: No active tab found in query results');
+        }
+
+        // If active tab isn't eligible, try to find any eligible tab
+        console.log('🐛 Web Debugger Background: Looking for any eligible tab...');
+        const allTabs = await chrome.tabs.query({});
+        const eligibleTabs = allTabs.filter(tab =>
+            tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))
+        );
+
+        if (eligibleTabs.length > 0) {
+            // Use the first eligible tab
+            const firstEligible = eligibleTabs[0];
+            console.log(`🐛 Web Debugger Background: Using eligible tab ${firstEligible.id} as fallback`);
+
+            // Activate this tab so the user can see it
+            await chrome.tabs.update(firstEligible.id!, { active: true });
+            await chrome.windows.update(firstEligible.windowId!, { focused: true });
+
+            // Brief pause to allow tab activation
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            return firstEligible;
+        }
+
+        throw new Error('No eligible tabs found. Please open a regular http/https webpage to use this extension.');
+    } catch (error) {
+        console.error('🐛 Web Debugger Background: Error finding active tab:', error);
         return null;
     }
-
-    const tab = tabs[0];
-
-    // Check if tab is eligible (http/https)
-    if (!tab.url || !(tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
-        console.log(`🐛 Web Debugger Background: Active tab not eligible - ${tab.url}`);
-        return null;
-    }
-
-    return tab;
 }
 
 /**
