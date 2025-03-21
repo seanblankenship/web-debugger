@@ -13,11 +13,12 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 background: resolve(__dirname, 'src/extension/background.ts'),
-                'content-script': resolve(__dirname, 'src/extension/content-bundle.ts'),
-                popup: resolve(__dirname, 'src/extension/popup.ts')
+                popup: resolve(__dirname, 'src/extension/popup.ts'),
+                debugger: resolve(__dirname, 'src/extension/debugger.ts')
             },
             output: {
                 entryFileNames: 'js/[name].js',
+                chunkFileNames: 'js/[name].js',
                 assetFileNames: (assetInfo) => {
                     const name = assetInfo.name || '';
                     const info = name.split('.');

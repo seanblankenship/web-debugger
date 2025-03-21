@@ -1,0 +1,263 @@
+:root {
+  /* Light theme (default) */
+  --bg-color: #ffffff;
+  --text-color: #333333;
+  --accent-color: #6366f1;
+  --border-color: #e5e7eb;
+  --header-bg: #f9fafb;
+  --sidebar-bg: #f3f4f6;
+  --panel-bg: #ffffff;
+  --hover-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] {
+  --bg-color: #1f2937;
+  --text-color: #f3f4f6;
+  --accent-color: #818cf8;
+  --border-color: #374151;
+  --header-bg: #111827;
+  --sidebar-bg: #2a384c;
+  --panel-bg: #1f2937;
+  --hover-color: rgba(255, 255, 255, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 14px;
+  line-height: 1.5;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Layout */
+.debugger-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.debugger-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.debugger-header h1 {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+}
+
+.debugger-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 200px;
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  background-color: var(--panel-bg);
+  position: relative;
+}
+
+#status-bar {
+  padding: 4px 16px;
+  font-size: 12px;
+  background-color: var(--header-bg);
+  border-top: 1px solid var(--border-color);
+}
+
+/* Tab Navigation */
+.tab-buttons {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+
+.tab-button {
+  background: transparent;
+  border: none;
+  text-align: left;
+  padding: 10px 16px;
+  cursor: pointer;
+  color: var(--text-color);
+  position: relative;
+  font-size: 14px;
+}
+
+.tab-button:hover {
+  background-color: var(--hover-color);
+}
+
+.tab-button.active {
+  color: var(--accent-color);
+  font-weight: 500;
+}
+
+.tab-button.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: var(--accent-color);
+}
+
+.tab-content {
+  display: none;
+  padding: 16px;
+  height: 100%;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Form Elements */
+select, button, input {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+button {
+  cursor: pointer;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+/* Inspector Tab */
+#element-tree {
+  border: 1px solid var(--border-color);
+  height: 250px;
+  overflow: auto;
+  margin-bottom: 16px;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+#element-details {
+  border: 1px solid var(--border-color);
+  flex: 1;
+  min-height: 200px;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+/* Console Tab */
+#console-output {
+  border: 1px solid var(--border-color);
+  height: calc(100% - 60px);
+  overflow: auto;
+  margin-bottom: 16px;
+  border-radius: 4px;
+  padding: 8px;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.console-input-container {
+  position: relative;
+}
+
+#console-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+/* Settings Tab */
+.settings-group {
+  margin-bottom: 24px;
+}
+
+.settings-group h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+#tab-list {
+  margin-top: 12px;
+}
+
+/* Tab List Items */
+.tab-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tab-item:hover {
+  background-color: var(--hover-color);
+}
+
+.tab-item.active {
+  border-color: var(--accent-color);
+  background-color: rgba(99, 102, 241, 0.1);
+}
+
+.tab-item img {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+}
+
+.tab-item-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Network Tab */
+#network-requests {
+  border: 1px solid var(--border-color);
+  height: calc(100% - 40px);
+  overflow: auto;
+  border-radius: 4px;
+  padding: 8px;
+} 

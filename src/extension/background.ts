@@ -2,278 +2,183 @@
  * Background script for Web Debugger extension
  */
 
-// Track tabs that have the debugger active
-const activeTabs = new Set<number>();
+// Track the active debugger window
+let debuggerWindowId: number | null = null;
 
 // On install or update
 chrome.runtime.onInstalled.addListener(() => {
     console.log('🐛 Web Debugger: Extension installed or updated');
 });
 
-// Listen for messages from popup or content scripts
+// Listen for action button clicks
+chrome.action.onClicked.addListener((tab) => {
+    handleActionClick(tab);
+});
+
+// Listen for messages from popup or debugger page
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('🐛 Web Debugger Background: Message received', message);
 
-    try {
-        if (message.type === 'TOGGLE_DEBUGGER') {
-            handleToggleDebugger(sendResponse);
-            return true;  // Keep the message channel open for async response
-        }
-
-        if (message.type === 'CHANGE_THEME') {
-            handleThemeChange(message.theme, sendResponse);
-            return true;  // Keep the message channel open for async response
-        }
-
-        // Unhandled message
-        console.warn('🐛 Web Debugger Background: Unhandled message type:', message.type);
-        sendResponse({ error: 'Unhandled message type' });
-    } catch (error) {
-        console.error('🐛 Web Debugger Background: Error:', error);
-        sendResponse({ error: error instanceof Error ? error.message : 'Unknown error' });
+    // Handle debugger page opening/updating
+    if (message.type === 'DEBUGGER_PAGE_LOADED') {
+        handleDebuggerPageLoaded(message, sender, sendResponse);
+        return true;
     }
 
-    return false;  // No async response expected
+    // Handle theme changes
+    if (message.type === 'CHANGE_THEME') {
+        handleThemeChangeMessage(message.theme, sendResponse);
+        return true;
+    }
+
+    // Handle tab selection
+    if (message.type === 'SELECT_TARGET_TAB') {
+        handleSelectTargetTab(message.tabId, sendResponse);
+        return true;
+    }
+
+    // Unhandled message
+    sendResponse({ error: 'Unknown message type' });
+    return false;
+});
+
+// When a window is closed, check if it was our debugger window
+chrome.windows.onRemoved.addListener((windowId) => {
+    if (windowId === debuggerWindowId) {
+        console.log('🐛 Web Debugger Background: Debugger window closed');
+        debuggerWindowId = null;
+    }
 });
 
 /**
- * Handle debugger toggle request from popup
+ * Handle action button click
  */
-async function handleToggleDebugger(sendResponse: (response: any) => void) {
+async function handleActionClick(tab: chrome.tabs.Tab) {
+    console.log('🐛 Web Debugger Background: Action button clicked for tab', tab.id);
+
     try {
-        // Get the currently active tab
-        const tab = await getActiveTab();
-        if (!tab || !tab.id) {
-            throw new Error('No active tab found');
-        }
-
-        console.log(`🐛 Web Debugger Background: Using active tab ${tab.id}`);
-
-        // Check if on a supported page
-        if (!tab.url || !(tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
-            throw new Error('This extension only works on regular web pages (http/https)');
-        }
-
-        // Check if content script is responding
-        const contentScriptReady = await isContentScriptReady(tab.id);
-        if (!contentScriptReady) {
-            // Try injecting the content script programmatically as a fallback
-            console.log(`🐛 Web Debugger Background: Content script not ready, trying to inject it programmatically`);
-
+        // Check if we already have a debugger window open
+        if (debuggerWindowId !== null) {
             try {
-                await chrome.scripting.executeScript({
-                    target: { tabId: tab.id },
-                    files: ['js/content-script.js'],
-                    world: 'ISOLATED'
-                });
-
-                // Wait a moment for script to initialize
-                await new Promise(resolve => setTimeout(resolve, 500));
-
-                // Check again
-                const recheck = await isContentScriptReady(tab.id);
-                if (!recheck) {
-                    throw new Error('Content script could not be initialized. The site may have restrictions preventing content scripts.');
-                }
+                // Focus the existing window
+                await chrome.windows.update(debuggerWindowId, { focused: true });
+                return;
             } catch (error) {
-                console.error('🐛 Web Debugger Background: Failed to inject content script:', error);
-                throw new Error('Content script could not be initialized. Try reloading the page.');
+                // Window might no longer exist
+                console.log('🐛 Web Debugger Background: Could not focus existing window, creating new one');
+                debuggerWindowId = null;
             }
         }
 
-        // Send toggle message to content script
-        const response = await sendMessageToTab(tab.id, { type: 'TOGGLE_DEBUGGER' });
-
-        // Update active tabs tracking
-        if (response.active) {
-            activeTabs.add(tab.id);
-        } else {
-            activeTabs.delete(tab.id);
+        // Store the active tab ID - this is the tab we want to debug
+        const targetTabId = tab.id;
+        if (!targetTabId) {
+            throw new Error('No active tab ID found');
         }
 
-        sendResponse(response);
+        // Store the target tab ID in local storage
+        await chrome.storage.local.set({ targetTabId });
+
+        // Create a new popup window with our debugger page
+        const screenWidth = window.screen.availWidth;
+        const screenHeight = window.screen.availHeight;
+        const width = Math.min(1000, screenWidth * 0.8);
+        const height = Math.min(800, screenHeight * 0.8);
+        const left = Math.floor((screenWidth - width) / 2);
+        const top = Math.floor((screenHeight - height) / 2);
+
+        const newWindow = await chrome.windows.create({
+            url: chrome.runtime.getURL('debugger.html'),
+            type: 'popup',
+            width,
+            height,
+            left,
+            top
+        });
+
+        // Store the window ID for later
+        debuggerWindowId = newWindow.id || null;
+        console.log('🐛 Web Debugger Background: Created new debugger window with ID', debuggerWindowId);
+
     } catch (error) {
-        console.error('🐛 Web Debugger Background: Toggle error:', error);
-        sendResponse({ error: error instanceof Error ? error.message : String(error) });
+        console.error('🐛 Web Debugger Background: Error opening debugger window:', error);
     }
 }
 
 /**
- * Handle theme change request from popup
+ * Handle debugger page loaded message
  */
-async function handleThemeChange(theme: string, sendResponse: (response: any) => void) {
+async function handleDebuggerPageLoaded(message: any, sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) {
     try {
-        // Get all tabs with the debugger active
-        const eligibleTabs = await getEligibleTabs();
-        console.log(`🐛 Web Debugger Background: Found ${eligibleTabs.length} eligible tabs:`, eligibleTabs);
+        // Get the target tab we want to debug (stored when action button was clicked)
+        const data = await chrome.storage.local.get('targetTabId');
+        const targetTabId = data.targetTabId;
 
-        // Send the theme change to all active tabs
-        const results = await Promise.all(
-            eligibleTabs.map(async (tabId) => {
-                try {
-                    const contentScriptReady = await isContentScriptReady(tabId);
-                    if (contentScriptReady) {
-                        return sendMessageToTab(tabId, { type: 'CHANGE_THEME', theme });
-                    }
-                    return { tabId, error: 'Content script not ready' };
-                } catch (error) {
-                    return {
-                        tabId,
-                        error: error instanceof Error ? error.message : String(error)
-                    };
-                }
-            })
-        );
+        if (!targetTabId) {
+            throw new Error('No target tab ID found in storage');
+        }
 
-        // Send combined results
+        // Get information about the tab
+        const tab = await chrome.tabs.get(targetTabId);
+
+        // Check if the tab still exists and is valid
+        if (!tab || chrome.runtime.lastError) {
+            throw new Error('Target tab no longer exists');
+        }
+
+        // Send back information about the target tab
         sendResponse({
             success: true,
-            theme,
-            results
+            targetTab: {
+                id: tab.id,
+                title: tab.title,
+                url: tab.url,
+                favIconUrl: tab.favIconUrl
+            }
         });
     } catch (error) {
-        console.error('🐛 Web Debugger Background: Theme change error:', error);
+        console.error('🐛 Web Debugger Background: Error handling debugger page loaded:', error);
         sendResponse({ error: error instanceof Error ? error.message : String(error) });
     }
 }
 
 /**
- * Get the active tab if it's eligible for the debugger
- * If the active tab isn't eligible, try to find any eligible tab
+ * Handle theme change request
  */
-async function getActiveTab(): Promise<chrome.tabs.Tab | null> {
+async function handleThemeChangeMessage(theme: string, sendResponse: (response: any) => void) {
     try {
-        // Get active tab in current window
-        const activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
-
-        // Check if we have an active tab and it's eligible
-        if (activeTabs && activeTabs.length > 0) {
-            const activeTab = activeTabs[0];
-            if (activeTab.url && (activeTab.url.startsWith('http://') || activeTab.url.startsWith('https://'))) {
-                console.log(`🐛 Web Debugger Background: Found eligible active tab: ${activeTab.id}`);
-                return activeTab;
-            } else {
-                console.log(`🐛 Web Debugger Background: Active tab not eligible: ${activeTab.url}`);
-            }
-        } else {
-            console.log('🐛 Web Debugger Background: No active tab found in query results');
-        }
-
-        // If active tab isn't eligible, try to find any eligible tab
-        console.log('🐛 Web Debugger Background: Looking for any eligible tab...');
-        const allTabs = await chrome.tabs.query({});
-        const eligibleTabs = allTabs.filter(tab =>
-            tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))
-        );
-
-        if (eligibleTabs.length > 0) {
-            // Use the first eligible tab
-            const firstEligible = eligibleTabs[0];
-            console.log(`🐛 Web Debugger Background: Using eligible tab ${firstEligible.id} as fallback`);
-
-            // Activate this tab so the user can see it
-            await chrome.tabs.update(firstEligible.id!, { active: true });
-            await chrome.windows.update(firstEligible.windowId!, { focused: true });
-
-            // Brief pause to allow tab activation
-            await new Promise(resolve => setTimeout(resolve, 300));
-
-            return firstEligible;
-        }
-
-        throw new Error('No eligible tabs found. Please open a regular http/https webpage to use this extension.');
+        // Save the theme setting
+        await chrome.storage.local.set({ theme });
+        sendResponse({ success: true, theme });
     } catch (error) {
-        console.error('🐛 Web Debugger Background: Error finding active tab:', error);
-        return null;
+        console.error('🐛 Web Debugger Background: Error saving theme:', error);
+        sendResponse({ error: error instanceof Error ? error.message : String(error) });
     }
 }
 
 /**
- * Get all tabs that are eligible for the debugger
+ * Handle selecting a target tab for debugging
  */
-async function getEligibleTabs(): Promise<number[]> {
-    // Get all tabs (we'll filter to HTTP/HTTPS)
-    const tabs = await chrome.tabs.query({});
+async function handleSelectTargetTab(tabId: number, sendResponse: (response: any) => void) {
+    try {
+        // Get the tab info
+        const tab = await chrome.tabs.get(tabId);
 
-    console.log(`🐛 Web Debugger Background: Found ${tabs.length} total tabs`);
+        // Store this as the new target tab
+        await chrome.storage.local.set({ targetTabId: tabId });
 
-    // Filter to only HTTP/HTTPS tabs with IDs
-    const eligibleTabs = tabs
-        .filter(tab => tab.id && tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://')))
-        .map(tab => tab.id as number);
-
-    console.log(`🐛 Web Debugger Background: Found ${eligibleTabs.length} eligible tabs:`, eligibleTabs);
-
-    return eligibleTabs;
-}
-
-/**
- * Check if content script is ready in a tab
- */
-async function isContentScriptReady(tabId: number): Promise<boolean> {
-    console.log(`🐛 Web Debugger Background: Checking if content script is ready in tab ${tabId}`);
-
-    return new Promise<boolean>((resolve) => {
-        const timeoutId = setTimeout(() => {
-            console.log(`🐛 Web Debugger Background: Ping timed out after 1000ms`);
-            resolve(false);
-        }, 1000);
-
-        chrome.tabs.sendMessage(tabId, { type: 'PING' }, (response) => {
-            clearTimeout(timeoutId);
-
-            if (chrome.runtime.lastError) {
-                console.log(`🐛 Web Debugger Background: Content script not ready: ${chrome.runtime.lastError.message}`);
-                resolve(false);
-                return;
+        // Send back the tab info
+        sendResponse({
+            success: true,
+            targetTab: {
+                id: tab.id,
+                title: tab.title,
+                url: tab.url,
+                favIconUrl: tab.favIconUrl
             }
-
-            if (response && response.status === 'PONG') {
-                console.log(`🐛 Web Debugger Background: Content script is ready`);
-                resolve(true);
-                return;
-            }
-
-            console.log(`🐛 Web Debugger Background: Unexpected response:`, response);
-            resolve(false);
         });
-    });
-}
-
-/**
- * Send a message to a tab with retry
- */
-async function sendMessageToTab(tabId: number, message: any): Promise<any> {
-    console.log(`🐛 Web Debugger Background: Sending message to tab ${tabId}:`, message);
-
-    const MAX_RETRIES = 2;
-    let lastError = null;
-
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-        try {
-            return await new Promise((resolve, reject) => {
-                chrome.tabs.sendMessage(tabId, message, (response) => {
-                    if (chrome.runtime.lastError) {
-                        reject(new Error(chrome.runtime.lastError.message || 'Connection failed'));
-                    } else if (response && response.error) {
-                        reject(new Error(response.error));
-                    } else {
-                        resolve(response || { success: true });
-                    }
-                });
-            });
-        } catch (error) {
-            console.log(`🐛 Web Debugger Background: Send message attempt ${attempt + 1} failed:`, error);
-            lastError = error;
-
-            // If not the last attempt, wait before retrying
-            if (attempt < MAX_RETRIES) {
-                const delay = 200 * Math.pow(2, attempt);
-                console.log(`🐛 Web Debugger Background: Retrying in ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-        }
+    } catch (error) {
+        console.error('🐛 Web Debugger Background: Error selecting tab:', error);
+        sendResponse({ error: error instanceof Error ? error.message : String(error) });
     }
-
-    throw lastError || new Error('Failed to send message after retries');
 } 

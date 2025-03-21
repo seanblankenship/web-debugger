@@ -15,20 +15,11 @@
         "service_worker": "js/background.js",
         "type": "module"
     },
-    "content_scripts": [
-        {
-            "matches": ["http://*/*", "https://*/*"],
-            "js": ["js/content-script.js"],
-            "run_at": "document_start",
-            "all_frames": false,
-            "world": "isolated"
-        }
-    ],
     "icons": {
         "16": "icons/icon16.png",
         "48": "icons/icon48.png",
         "128": "icons/icon128.png"
     },
-    "permissions": ["storage", "activeTab", "tabs", "scripting"],
+    "permissions": ["storage", "activeTab", "tabs", "windows", "scripting"],
     "host_permissions": ["<all_urls>"]
 }
