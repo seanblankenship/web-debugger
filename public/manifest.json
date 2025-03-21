@@ -17,8 +17,8 @@
     },
     "content_scripts": [
         {
-            "matches": ["http://*/*", "https://*/*"],
-            "js": ["js/content-loader.js"],
+            "matches": ["<all_urls>"],
+            "js": ["js/content-script.js"],
             "run_at": "document_start",
             "all_frames": false
         }
@@ -26,8 +26,7 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "js/content.js",
-                "js/index.js",
+                "js/core.js",
                 "js/base-panel.js",
                 "js/welcome-dashboard.js",
                 "js/custom-element.js"
@@ -40,6 +39,6 @@
         "48": "icons/icon48.png",
         "128": "icons/icon128.png"
     },
-    "permissions": ["storage", "activeTab", "tabs", "scripting", "windows"],
+    "permissions": ["storage", "activeTab", "tabs", "scripting"],
     "host_permissions": ["<all_urls>"]
 }

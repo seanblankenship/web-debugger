@@ -1,120 +1,100 @@
 /**
- * Popup script for the Web Debugger extension
+ * Popup script for Web Debugger extension
  */
 
-// Wait for DOM content to load
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🐛 Web Debugger Popup: Initialized');
+console.log('🐛 Web Debugger Popup: Initialized');
 
-    // Get toggle button element
-    const toggleButton = document.getElementById('toggle-debugger');
+// Get elements
+const toggleButton = document.getElementById('toggle-debugger');
+console.log('🐛 Web Debugger Popup: Toggle button found', !!toggleButton);
 
-    // Add click event listener to toggle button
-    if (toggleButton) {
-        console.log('🐛 Web Debugger Popup: Toggle button found');
+// Set up click handler for the toggle button
+if (toggleButton) {
+    toggleButton.addEventListener('click', async () => {
+        console.log('🐛 Web Debugger Popup: Toggle button clicked');
 
-        toggleButton.addEventListener('click', () => {
-            console.log('🐛 Web Debugger Popup: Toggle button clicked');
-
-            // Show loading state
-            toggleButton.textContent = 'Loading...';
-            toggleButton.setAttribute('disabled', 'true');
-
-            // Clear previous error message
-            const errorElement = document.getElementById('error-message');
-            if (errorElement) {
-                errorElement.style.display = 'none';
-                errorElement.textContent = '';
-            }
-
-            // Send toggle message to background script
-            chrome.runtime.sendMessage({ action: 'toggle-debugger' }, (response) => {
-                console.log('🐛 Web Debugger Popup: Toggle message response:', response);
-
-                // Reset button state
-                toggleButton.textContent = 'Toggle Debugger';
-                toggleButton.removeAttribute('disabled');
-
-                // Check for error in response
-                if (response && response.error) {
-                    console.error('�� Web Debugger Popup: Error from background script:', response.error);
-                    showError(response.error);
-                    return;
-                }
-
-                // Close popup after a brief delay to ensure message is processed
-                setTimeout(() => {
-                    window.close();
-                }, 200);
+        try {
+            const response = await sendMessageToBackground({
+                type: 'TOGGLE_DEBUGGER'
             });
 
-            console.log('🐛 Web Debugger Popup: Toggle message sent');
-        });
-    } else {
-        console.error('🐛 Web Debugger Popup: Toggle button not found');
-    }
+            console.log('🐛 Web Debugger Popup: Toggle message response:', response);
 
-    // Check for theme preference in storage
-    chrome.storage.local.get(['theme'], (result) => {
-        const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
-
-        if (themeSelect) {
-            console.log('🐛 Web Debugger Popup: Theme select found');
-
-            // Set select value based on stored theme
-            if (result.theme) {
-                console.log('🐛 Web Debugger Popup: Using stored theme:', result.theme);
-                themeSelect.value = result.theme;
+            if (response.error) {
+                showError(`Error from background script: ${response.error}`);
             }
-
-            // Listen for theme changes
-            themeSelect.addEventListener('change', () => {
-                const theme = themeSelect.value as 'light' | 'dark';
-                console.log('🐛 Web Debugger Popup: Theme changed to:', theme);
-
-                // Save theme preference
-                chrome.storage.local.set({ theme });
-
-                // Send theme change message
-                chrome.runtime.sendMessage({
-                    action: 'set-theme',
-                    theme
-                }, (response) => {
-                    // Check for error in response
-                    if (response && response.error) {
-                        console.error('🐛 Web Debugger Popup: Error from background script:', response.error);
-                        showError(response.error);
-                    }
-                });
-
-                console.log('🐛 Web Debugger Popup: Theme message sent');
-            });
-        } else {
-            console.error('🐛 Web Debugger Popup: Theme select not found');
+        } catch (error) {
+            console.error('🐛 Web Debugger Popup: Error sending toggle message:', error);
+            showError(`Error: ${error instanceof Error ? error.message : String(error)}`);
         }
     });
+}
 
-    // Create error message element if it doesn't exist
-    if (!document.getElementById('error-message')) {
-        const errorElement = document.createElement('div');
-        errorElement.id = 'error-message';
-        errorElement.style.display = 'none';
-        errorElement.style.color = '#e74c3c';
-        errorElement.style.marginTop = '10px';
-        errorElement.style.padding = '10px';
-        errorElement.style.border = '1px solid #e74c3c';
-        errorElement.style.borderRadius = '4px';
-        errorElement.style.fontSize = '12px';
+// Theme selector
+const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
+console.log('🐛 Web Debugger Popup: Theme select found', !!themeSelect);
 
-        const container = document.querySelector('.popup-container');
-        if (container) {
-            container.appendChild(errorElement);
+if (themeSelect) {
+    // Initial theme
+    chrome.storage.local.get('theme', (data) => {
+        const savedTheme = data.theme || 'light';
+        console.log('🐛 Web Debugger Popup: Using stored theme:', savedTheme);
+        themeSelect.value = savedTheme;
+    });
+
+    // Theme change handler
+    themeSelect.addEventListener('change', async () => {
+        const theme = themeSelect.value;
+        console.log('🐛 Web Debugger Popup: Theme changed to:', theme);
+
+        // Save to storage
+        chrome.storage.local.set({ theme });
+
+        try {
+            const response = await sendMessageToBackground({
+                type: 'CHANGE_THEME',
+                theme
+            });
+
+            console.log('🐛 Web Debugger Popup: Theme message sent', response);
+
+            if (response.error) {
+                showError(`Error from background script: ${response.error}`);
+            }
+        } catch (error) {
+            console.error('🐛 Web Debugger Popup: Error sending theme change:', error);
+            showError(`Error: ${error instanceof Error ? error.message : String(error)}`);
         }
-    }
-});
+    });
+}
 
-// Helper function to show error message
+/**
+ * Send a message to the background script
+ */
+function sendMessageToBackground(message: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+        try {
+            chrome.runtime.sendMessage(message, (response) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message || 'Unknown error'));
+                } else if (response && response.error) {
+                    reject(new Error(response.error));
+                } else {
+                    resolve(response || {});
+                }
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+/**
+ * Show an error message in the popup
+ */
 function showError(message: string) {
+    console.log('🐛 Web Debugger Popup:', message);
+
     const errorElement = document.getElementById('error-message');
     if (errorElement) {
         errorElement.textContent = message;

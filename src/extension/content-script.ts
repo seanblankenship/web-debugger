@@ -1,227 +1,187 @@
 /**
- * Main Content Script for Web Debugger
- * This is loaded as a web accessible resource to bypass CSP
+ * Web Debugger Content Script
+ * 
+ * This script is directly injected by the browser into web pages.
+ * It serves as the entry point for the debugger's functionality.
  */
 
-// Set up message listener right away to respond to pings
-console.log('🐛 Web Debugger Content: Setting up message listener');
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('🐛 Web Debugger Content: Message received from extension:', message);
+console.log('🐛 Web Debugger: Content script initializing');
 
-    // Handle PING message immediately
-    if (message && message.type === 'PING') {
-        console.log('🐛 Web Debugger Content: Received PING, responding with PONG');
+// Core state management
+let isInitialized = false;
+let isActive = false;
+let debuggerApi: any = null;
+let debuggerPanel: HTMLElement | null = null;
+let currentTheme = 'dark';
+
+// Set up extension message listener immediately
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('🐛 Web Debugger: Message received:', message);
+
+    // Always respond to ping messages, even before full initialization
+    if (message.type === 'PING') {
+        console.log('🐛 Web Debugger: Received PING, responding with PONG');
         sendResponse({ status: 'PONG' });
         return true;
     }
 
-    // For other messages, process asynchronously
-    processMessage(message).then(response => {
-        console.log('🐛 Web Debugger Content: Sending response:', response);
-        sendResponse(response);
-    }).catch(error => {
-        console.error('🐛 Web Debugger Content: Error processing message:', error);
-        sendResponse({ error: error.message || 'Unknown error' });
-    });
+    // Handle theme changes
+    if (message.type === 'CHANGE_THEME') {
+        console.log('🐛 Web Debugger: Theme change requested:', message.theme);
+        currentTheme = message.theme;
 
-    return true; // Keep the message channel open for async response
+        if (debuggerApi) {
+            debuggerApi.settings.set('theme', currentTheme);
+            sendResponse({ success: true });
+        } else {
+            sendResponse({ success: false, error: 'Debugger not initialized yet' });
+        }
+
+        return true;
+    }
+
+    // Handle toggle requests
+    if (message.type === 'TOGGLE_DEBUGGER') {
+        console.log('🐛 Web Debugger: Toggle requested, current state:', isActive);
+
+        if (!isInitialized) {
+            // Initialize on first toggle
+            initializeDebugger()
+                .then(() => {
+                    toggleDebuggerVisibility();
+                    sendResponse({ success: true, active: isActive });
+                })
+                .catch(error => {
+                    console.error('🐛 Web Debugger: Initialization failed:', error);
+                    sendResponse({
+                        success: false,
+                        error: error instanceof Error ? error.message : String(error)
+                    });
+                });
+        } else {
+            // Just toggle visibility if already initialized
+            toggleDebuggerVisibility();
+            sendResponse({ success: true, active: isActive });
+        }
+
+        return true;
+    }
+
+    // For any other message, return an error if not initialized
+    if (!isInitialized) {
+        sendResponse({ success: false, error: 'Debugger not initialized yet' });
+        return true;
+    }
+
+    // Default response for unknown messages
+    sendResponse({ success: false, error: 'Unknown message type' });
+    return true;
 });
 
-// Define interface for message event data
-interface WebDebuggerMessageEvent {
-    data?: {
-        source?: string;
-        response?: any;
-        payload?: any;
-    };
-}
-
 /**
- * Flag to track if the debugger has been initialized
+ * Initialize the debugger interface
  */
-let isInitialized = false;
-let coreAPI: any = null;
-let initializationError: string | null = null;
-
-/**
- * Send a response back to the content-loader
- */
-function sendResponse(response: any) {
-    window.postMessage({
-        source: 'web-debugger-content-script',
-        response
-    }, window.location.origin);
-}
-
-// Define module URLs to preload
-const MODULE_URLS = {
-    CORE: 'js/index.js',
-    BASE_PANEL: 'js/base-panel.js',
-    WELCOME_DASHBOARD: 'js/welcome-dashboard.js',
-    CUSTOM_ELEMENT: 'js/custom-element.js'
-};
-
-/**
- * Initialize the debugger with proper error handling
- */
-async function initializeDebugger() {
+async function initializeDebugger(): Promise<void> {
     if (isInitialized) {
-        console.log('🐛 Web Debugger Content: Already initialized, skipping');
-        return true;
+        console.log('🐛 Web Debugger: Already initialized');
+        return Promise.resolve();
     }
 
-    if (initializationError) {
-        console.error('🐛 Web Debugger Content: Initialization previously failed:', initializationError);
-        return false;
-    }
-
-    console.log('🐛 Web Debugger Content: Initializing...');
+    console.log('🐛 Web Debugger: Initializing...');
 
     try {
-        // First import the custom element base class
-        console.log('🐛 Web Debugger Content: Importing custom element dependencies...');
-        try {
-            await import(chrome.runtime.getURL(MODULE_URLS.CUSTOM_ELEMENT));
-            console.log('🐛 Web Debugger Content: Custom element dependencies loaded successfully');
-        } catch (error) {
-            console.error('🐛 Web Debugger Content: Error loading custom element dependencies:', error);
-            throw new Error(`Failed to load custom element dependencies: ${error instanceof Error ? error.message : String(error)}`);
-        }
+        // Import required modules
+        console.log('🐛 Web Debugger: Loading dependencies...');
 
-        // Import base components
-        console.log('🐛 Web Debugger Content: Importing base-panel component...');
-        try {
-            await import(chrome.runtime.getURL(MODULE_URLS.BASE_PANEL));
-            console.log('🐛 Web Debugger Content: Base panel loaded successfully');
-        } catch (error) {
-            console.error('🐛 Web Debugger Content: Error loading base panel:', error);
-            throw new Error(`Failed to load base panel component: ${error instanceof Error ? error.message : String(error)}`);
-        }
+        // First load custom element support
+        console.log('🐛 Web Debugger: Loading custom element support...');
+        await import(chrome.runtime.getURL('js/custom-element.js'));
 
-        console.log('🐛 Web Debugger Content: Importing welcome-dashboard component...');
-        try {
-            await import(chrome.runtime.getURL(MODULE_URLS.WELCOME_DASHBOARD));
-            console.log('🐛 Web Debugger Content: Welcome dashboard loaded successfully');
-        } catch (error) {
-            console.error('🐛 Web Debugger Content: Error loading welcome dashboard:', error);
-            throw new Error(`Failed to load welcome dashboard component: ${error instanceof Error ? error.message : String(error)}`);
-        }
+        // Then load UI components
+        console.log('🐛 Web Debugger: Loading UI components...');
+        await import(chrome.runtime.getURL('js/base-panel.js'));
+        await import(chrome.runtime.getURL('js/welcome-dashboard.js'));
 
-        // Import and initialize core module last
-        console.log('🐛 Web Debugger Content: Importing core module...');
-        let coreModule;
-        try {
-            coreModule = await import(chrome.runtime.getURL(MODULE_URLS.CORE));
-            console.log('🐛 Web Debugger Content: Core module loaded successfully');
-        } catch (error) {
-            console.error('🐛 Web Debugger Content: Error loading core module:', error);
-            throw new Error(`Failed to load core module: ${error instanceof Error ? error.message : String(error)}`);
-        }
+        // Finally load and initialize core
+        console.log('🐛 Web Debugger: Loading core...');
+        const coreModule = await import(chrome.runtime.getURL('js/core.js'));
 
         // Initialize the core API
-        console.log('🐛 Web Debugger Content: Initializing core...');
-        try {
-            coreAPI = coreModule.initCore();
-            console.log('🐛 Web Debugger Content: Core initialized successfully:', !!coreAPI);
-        } catch (error) {
-            console.error('🐛 Web Debugger Content: Error initializing core:', error);
-            throw new Error(`Failed to initialize core: ${error instanceof Error ? error.message : String(error)}`);
-        }
+        debuggerApi = coreModule.initCore();
+        console.log('🐛 Web Debugger: Core initialized:', !!debuggerApi);
 
-        // Create welcome dashboard panel
-        console.log('🐛 Web Debugger Content: Creating panel...');
-        try {
-            const panel = coreAPI.ui.createPanel({
-                title: 'Web Debugger',
-                draggable: true,
-                resizable: true
-            });
+        // Set up theme
+        debuggerApi.settings.set('theme', currentTheme);
 
-            // Create welcome dashboard
-            console.log('🐛 Web Debugger Content: Creating welcome dashboard...');
-            const welcomeDashboard = document.createElement('web-debugger-welcome');
-            panel.append(welcomeDashboard);
-        } catch (error) {
-            console.error('🐛 Web Debugger Content: Error creating UI elements:', error);
-            throw new Error(`Failed to create UI elements: ${error instanceof Error ? error.message : String(error)}`);
-        }
+        // Create the debugger panel (but initially hidden)
+        createDebuggerPanel();
 
-        // Set initialization flag
+        // Mark as initialized
         isInitialized = true;
+        console.log('🐛 Web Debugger: Initialization complete');
 
-        console.log('🐛 Web Debugger Content: Fully initialized');
-        return true;
+        return Promise.resolve();
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        initializationError = errorMessage;
-        console.error('🐛 Web Debugger Content: Error during initialization:', error);
-        return false;
+        console.error('🐛 Web Debugger: Error during initialization:', error);
+        return Promise.reject(new Error(`Initialization failed: ${error instanceof Error ? error.message : String(error)}`));
     }
 }
 
 /**
- * Process messages from the content-loader
+ * Create the main debugger panel
  */
-async function processMessage(message: any) {
-    console.log('🐛 Web Debugger Content: Processing message:', message);
+function createDebuggerPanel() {
+    try {
+        console.log('🐛 Web Debugger: Creating panel...');
 
-    // Handle diagnostic message
-    if (message.action === 'get-diagnostics') {
-        return {
-            isInitialized,
-            hasError: !!initializationError,
-            error: initializationError
-        };
-    }
+        // Create panel using the API
+        debuggerPanel = debuggerApi.ui.createPanel({
+            title: 'Web Debugger',
+            draggable: true,
+            resizable: true,
+            visible: false  // Start hidden
+        });
 
-    // Ensure we're initialized
-    if (!isInitialized) {
-        console.log('🐛 Web Debugger Content: Not initialized, initializing now...');
-        const success = await initializeDebugger();
-        if (!success) {
-            return {
-                error: 'Failed to initialize Web Debugger',
-                details: initializationError
-            };
+        if (!debuggerPanel) {
+            throw new Error('Failed to create debugger panel - API returned null');
         }
-    }
 
-    // Handle actual messages
-    if (message.action === 'toggle-debugger') {
-        console.log('🐛 Web Debugger Content: Toggle action received');
-        if (coreAPI) {
-            coreAPI.ui.toggleVisibility();
-            const isVisible = coreAPI.ui.isVisible();
-            console.log('🐛 Web Debugger Content: Panel visibility:', isVisible);
-            return { success: true, visible: isVisible };
-        } else {
-            console.error('🐛 Web Debugger Content: Core API not initialized');
-            return { error: 'Core API not initialized' };
-        }
-    } else if (message.action === 'set-theme') {
-        if (message.theme && coreAPI) {
-            console.log('🐛 Web Debugger Content: Setting theme to', message.theme);
-            coreAPI.ui.setTheme(message.theme);
-            return { success: true, theme: message.theme };
-        } else {
-            console.error('🐛 Web Debugger Content: Invalid theme or Core API not initialized');
-            return { error: 'Invalid theme or Core API not initialized' };
-        }
-    } else {
-        console.warn('🐛 Web Debugger Content: Unknown message action', message.action);
-        return { error: 'Unknown message action' };
+        // Add welcome dashboard
+        console.log('🐛 Web Debugger: Creating welcome dashboard...');
+        const welcomeDashboard = document.createElement('web-debugger-welcome');
+        debuggerPanel.append(welcomeDashboard);
+
+        console.log('🐛 Web Debugger: Panel created and ready');
+    } catch (error) {
+        console.error('🐛 Web Debugger: Error creating panel:', error);
+        throw new Error(`Failed to create panel: ${error instanceof Error ? error.message : String(error)}`);
     }
 }
 
-// Initialize on load if we're in a compatible environment
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', async () => {
-        console.log('🐛 Web Debugger Content: DOM loaded, initializing...');
-        await initializeDebugger();
-    });
-} else {
-    console.log('🐛 Web Debugger Content: DOM already loaded, initializing...');
-    initializeDebugger().catch(error => {
-        console.error('🐛 Web Debugger Content: Error during initialization:', error);
-    });
+/**
+ * Toggle the visibility of the debugger UI
+ */
+function toggleDebuggerVisibility() {
+    if (!isInitialized || !debuggerApi || !debuggerPanel) {
+        console.error('🐛 Web Debugger: Cannot toggle, not initialized');
+        return;
+    }
+
+    try {
+        isActive = !isActive;
+        console.log('🐛 Web Debugger: Toggling visibility to:', isActive);
+
+        // Show/hide the panel
+        if (debuggerPanel) {
+            if (isActive) {
+                debuggerPanel.style.display = 'block';
+            } else {
+                debuggerPanel.style.display = 'none';
+            }
+        }
+
+        console.log('🐛 Web Debugger: Visibility toggled successfully');
+    } catch (error) {
+        console.error('🐛 Web Debugger: Error toggling visibility:', error);
+    }
 } 
