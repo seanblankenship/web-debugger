@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Web Debugger",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "A browser extension that provides comprehensive debugging and design tools for web development.",
     "action": {
         "default_popup": "popup.html",
